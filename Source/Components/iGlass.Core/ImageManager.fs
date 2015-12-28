@@ -5,6 +5,7 @@ open System.IO
 open FSharp.Core.Fluent
 
 type FilePath = string
+type ImageIndex = string * int
 
 type ImageManagerContext =
   { OriginSource: FileDesc list 
@@ -28,4 +29,4 @@ type ImageManager(source: FileDesc seq) =
   let fileList = source.collect(FileDesc.getFiles >> Seq.filter isSupported).toArray()
   let currentIndex = if fileList.Length > 0 then Some 0 else None
 
-  member x.Current = currentIndex.map(Array.get fileList)
+  member x.Current: ImageIndex option = currentIndex.map(fun pos -> Array.get fileList pos, pos)

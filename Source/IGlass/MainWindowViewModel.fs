@@ -1,11 +1,12 @@
 ﻿namespace iGlass.ViewModels
 
 open System
+open System.Windows
 open System.Windows.Data
 open System.Windows.Media.Imaging
 
+open FSharp.Core.Fluent
 open FSharp.ViewModule
-open System.Windows
 open RZ.Foundation
 open iGlass.Core
 
@@ -17,7 +18,7 @@ type MainWindowEvent =
   | MouseMove of Point
 
 [<AutoOpen>]
-module private CommonUse =
+module private Internal =
   let dbg = Diagnostics.Debug.WriteLine
 
 module private DragEventHandlers =
@@ -43,14 +44,19 @@ type MainWindowViewModel() as me =
   [<Literal>]
   let AppTitle = "iGLassy"
 
-  let image: NotifyingValue<string option> = me.Factory.Backing(<@ me.Image @>, None)
+  let image: NotifyingValue<ImageIndex option> = me.Factory.Backing(<@ me.Image @>, None)
 
   let mainWindowCommand = me.Factory.EventValueCommand()
 
-  member __.Image with get() = image.Value and set v = image.Value <- v
-  member __.MainWindowCommand = mainWindowCommand
-  member __.Title = image.Value |> Option.cata (constant AppTitle) (sprintf "%s - %s" AppTitle)
+  member __.Image with get() = image.Value 
+                  and set v = image.Value <- v
+                              me.RaisePropertyChanged "Title"
+  member __.Title =
+    match image.Value with
+    | None -> AppTitle
+    | Some (img, pos) -> sprintf "%s - [%d] %s" AppTitle pos img
 
+  member __.MainWindowCommand = mainWindowCommand
 
 type MainWindowController(model: MainWindowViewModel) =
   let mutable imageManager = ImageManager(Seq.empty)
@@ -73,20 +79,23 @@ type MainWindowController(model: MainWindowViewModel) =
   member __.SelectGallery (fileDesc: FileDesc) = galleryFrom(Seq.singleton fileDesc)
 
 
-type StringOptionToImageSource() =
-  interface IValueConverter with
-    member x.Convert(value, targetType, parameter, culture) =
-      let stringOpt = value :?> string option
-      match stringOpt with
-      | None -> DependencyProperty.UnsetValue
-      | Some path ->
-        let bi = BitmapImage()
-        bi.BeginInit()
-        bi.UriSource <- Uri(path)
-        bi.EndInit()
-        bi :> obj
+type ImageFromImageIndex() =
+  let extractImage (path, _) =
+    let bi = BitmapImage()
+    bi.BeginInit()
+    bi.UriSource <- Uri(path)
+    bi.EndInit()
+    bi
 
-    member x.ConvertBack(value, targetType, parameter, culture) = DependencyProperty.UnsetValue
+  interface IValueConverter with
+    member __.Convert(value, targetType, parameter, culture) =
+      value
+        .tryCast<ImageIndex option>()
+        .join()
+        .map(extractImage >> box)
+        .getOrElse(constant DependencyProperty.UnsetValue)
+
+    member __.ConvertBack(value, targetType, parameter, culture) = DependencyProperty.UnsetValue
 
 type private DragEventConverter = FsXaml.EventArgsConverter<DragEventArgs, MainWindowEvent>
 type DropConverter() = inherit DragEventConverter(DragEventHandlers.getDropTarget >> Drop, Invalid "DropConverter")
