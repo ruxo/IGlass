@@ -65,6 +65,7 @@
     <Resource Include="MainWindow.xaml" />
     <None Include="App.config" />
     <None Include="paket.references" />
+    <None Include="CHANGE.log" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Components\iGlass.Common\iGlass.Common.fsproj">
