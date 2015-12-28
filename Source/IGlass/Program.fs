@@ -25,13 +25,12 @@ let getPathParameter = function
 | x -> Some x.[0]
 
 let runApplication fileOpt =
-  let model = ViewModels.MainWindowViewModel()
-  let form = Views.MainWindow().Root
-  form.DataContext <- model
+  let form = Views.MainWindow()
+  let model = form.DataContext.cast<ViewModels.MainWindowViewModel>()
 
-  fileOpt |> Option.do' model.SelectGallery
+  Option.do' model.SelectGallery fileOpt
   
-  Application().Run(form) |> ignore
+  Application().Run(form)
 
 [<STAThread>]
 [<EntryPoint>]
@@ -50,7 +49,6 @@ let main argv =
   else
     // TODO it's possible that the first instance has been already exited.
     InstanceManagement.passArgumentsToFirstInstance appGuid argv
-    |> Option.cata id (fun ex -> printfn "Cannot talk to first instance: %A" ex
-                                 runApplication fileOpt)
-
-  0
+    |> Option.cata (constant 1)
+                   (fun ex -> printfn "Cannot talk to first instance: %A" ex
+                              runApplication fileOpt)

@@ -1,3 +1,9 @@
 ﻿module iGlass.Views
 
-type MainWindow = FsXaml.XAML<"MainWindow.xaml">
+open System.Windows
+open RZ.Wpf.CodeBehind
+
+type MainWindow() as me =
+  inherit Window()
+  
+  do me.InitializeCodeBehind("MainWindow.xaml")
