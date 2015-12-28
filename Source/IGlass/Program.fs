@@ -27,11 +27,14 @@ let getPathParameter = function
 let runApplication fileOpt =
   let form = Views.MainWindow()
   let model = form.DataContext.cast<ViewModels.MainWindowViewModel>()
+  let controller = ViewModels.MainWindowController(model)
 
-  Option.do' model.SelectGallery fileOpt
+  controller.Initialize()
+  Option.do' controller.SelectGallery fileOpt
   
   Application().Run(form)
 
+  
 [<STAThread>]
 [<EntryPoint>]
 let main argv =

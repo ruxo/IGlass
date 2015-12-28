@@ -43,31 +43,35 @@ type MainWindowViewModel() as me =
   [<Literal>]
   let AppTitle = "iGLassy"
 
-  let mutable imageManager = ImageManager(Seq.empty)
   let image: NotifyingValue<string option> = me.Factory.Backing(<@ me.Image @>, None)
 
   let mainWindowCommand = me.Factory.EventValueCommand()
 
+  member __.Image with get() = image.Value and set v = image.Value <- v
+  member __.MainWindowCommand = mainWindowCommand
+  member __.Title = image.Value |> Option.cata (constant AppTitle) (sprintf "%s - %s" AppTitle)
+
+
+type MainWindowController(model: MainWindowViewModel) =
+  let mutable imageManager = ImageManager(Seq.empty)
+
+  let galleryFrom (fdList: FileDesc seq) =
+    imageManager <- ImageManager(fdList)
+    model.Image <- imageManager.Current
+
   let handleDrag = function
   | DragEnter arg -> DragEventHandlers.validateDrag arg; arg.Handled <- true
-  | Drop fileList -> me.GalleryFrom(fileList)
+  | Drop fileList -> galleryFrom(fileList)
   | case -> Printf.kprintf dbg "Unexpected case: %A" case
 
-  do
-    me.EventStream
+  member __.Initialize() =
+    model.EventStream
     |> Observable.filter DragEventHandlers.isDragEvents
     |> Observable.subscribe handleDrag
     |> ignore
-
-  member x.Image with get() = image.Value
-  member x.MainWindowCommand = mainWindowCommand
-  member x.Title = image.Value |> Option.cata (constant AppTitle) (sprintf "%s - %s" AppTitle)
-
-  member x.GalleryFrom (fdList: FileDesc seq) =
-    imageManager <- ImageManager(fdList)
-    image.Value <- imageManager.Current
     
-  member x.SelectGallery (fileDesc: FileDesc) = x.GalleryFrom(Seq.singleton fileDesc)
+  member __.SelectGallery (fileDesc: FileDesc) = galleryFrom(Seq.singleton fileDesc)
+
 
 type StringOptionToImageSource() =
   interface IValueConverter with
