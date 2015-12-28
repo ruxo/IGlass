@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<c:Diagram
+xmlns:c="http://www.cadifra.com/schema/1.0"
+xmlns:c1v3="http://www.cadifra.com/schema/1.3"
+ProductVersion="1.3.3">
+
+<Page id="r1"
+Size="1"
+Width="21590"
+Height="27940"
+Landscape="1"
+Rows="1"
+Columns="1"
+Margins="1016 1016 1440 1016"
+CutGlueMargins="1016 1016 1016 1016"
+Scale="1"/>
+
+<DiagramType id="r2"
+TypeValue="1"/>
+
+<Style id="r3">
+<dir n="Base" Typeface="arial" Size="11" Bold="0">
+<dir n="Class Diagram">
+<dir n="Association" Bold="1"/>
+<dir n="Class" Bold="0">
+<dir n="Attached Text"/>
+<dir n="Header" Bold="1"/>
+</dir>
+<dir n="Multiplicity, Role" Bold="0"/>
+</dir>
+</dir>
+</Style>
+
+<Class id="r4"
+Pos="2200 -2600"
+Size="2900 1000">
+<Text>ImageListView</Text>
+</Class>
+
+<Class id="r5"
+Pos="7600 -2600"
+Size="5600 1000">
+<Text>ImageListViewItemCollection</Text>
+</Class>
+
+<Assoc id="r6">
+<End id="r7"
+Pos="5100 -3100"
+Class="r4"
+Type="1"/>
+<Segment id="r8"
+Ends="r7 r9"/>
+<End id="r9"
+Pos="7600 -3100"
+Class="r5"
+Type="1"
+Traversed="1"/>
+</Assoc>
+
+<Class id="r10"
+Pos="7600 -5700"
+Size="3700 1000">
+<Text>ImageListViewItem</Text>
+</Class>
+
+<Assoc id="r11">
+<End id="r12"
+Pos="7600 -6200"
+Class="r10"
+Type="1"/>
+<Segment id="r13"
+Ends="r12 r14"/>
+<Join id="r14"
+Pos="4400 -6200"/>
+<Segment id="r15"
+Ends="r14 r16"/>
+<End id="r16"
+Pos="4400 -3600"
+Class="r4"
+Type="1"
+Traversed="1"/>
+</Assoc>
+
+</c:Diagram>

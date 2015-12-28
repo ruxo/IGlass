@@ -1,0 +1,26 @@
+﻿<Window xmlns="http://schemas.microsoft.com/netfx/2007/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity" 
+        xmlns:fsx="clr-namespace:FsXaml;assembly=FsXaml.Wpf"
+        xmlns:model="clr-namespace:iGlass.ViewModels;assembly=IGlass"
+        Title="{Binding Title, Mode=OneWay}"
+        AllowDrop="true" Background="DimGray">
+  <Window.Resources>
+    <ResourceDictionary>
+      <model:MainWindowViewModel x:Key="model" />
+      <model:StringOptionToImageSource x:Key="appConverter" />
+      <model:DragEnterConverter x:Key="dragEnterConverter" />
+      <model:DropConverter x:Key="dropConverter" />
+    </ResourceDictionary>
+  </Window.Resources>
+  <Window.DataContext>
+    <Binding Source="{StaticResource model}" />
+  </Window.DataContext>
+  <i:Interaction.Triggers>
+    <i:EventTrigger EventName="DragEnter"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dragEnterConverter}" /></i:EventTrigger>
+    <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
+  </i:Interaction.Triggers>      
+  <Grid>
+    <Image Source="{Binding Image, Converter={StaticResource appConverter}, Mode=OneWay}"></Image>
+  </Grid>
+</Window>

@@ -1,0 +1,15 @@
+source https://api.nuget.org/v3/index.json
+source https://www.nuget.org/api/v2/
+source http://ruxoz.net/nuhost/nuget
+
+nuget Facebook 7.0.6 framework: >= net452
+nuget FSharp.Core.Fluent-4.0
+nuget FSharp.ViewModule.Core
+nuget IconLib.Unofficial
+nuget RZ.F4.FsXaml.Wpf
+nuget RZ.Wpf
+nuget RZ-FreeImageNET.dll
+nuget System.Drawing.PSD 0.1.0 framework: >= net40
+nuget Unofficial.Ionic.Zip
+
+gist ruxo/a9244a6dfe5e73337261 common.fs
