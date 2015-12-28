@@ -29,6 +29,7 @@ let runApplication fileOpt =
   let model = form.DataContext.cast<ViewModels.MainWindowViewModel>()
 
   Option.do' model.SelectGallery fileOpt
+  ViewModels.MainWindowController(model).Initialize()
   
   Application().Run(form)
 

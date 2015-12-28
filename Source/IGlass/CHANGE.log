@@ -1,4 +1,6 @@
-﻿20151228.0856
-    [ ] Separate controller logic out of Main Window View Model.
+﻿20151228
+    [✓] Separate controller logic out of Main Window View Model.
     [ ] Show file index vs total files on the app title bar.
-    
+    [ ] Given app is running
+        When invalid file (e.g. *.pptx) is dragged and dropped
+        Then a message box should popup

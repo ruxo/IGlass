@@ -48,17 +48,6 @@ type MainWindowViewModel() as me =
 
   let mainWindowCommand = me.Factory.EventValueCommand()
 
-  let handleDrag = function
-  | DragEnter arg -> DragEventHandlers.validateDrag arg; arg.Handled <- true
-  | Drop fileList -> me.GalleryFrom(fileList)
-  | case -> Printf.kprintf dbg "Unexpected case: %A" case
-
-  do
-    me.EventStream
-    |> Observable.filter DragEventHandlers.isDragEvents
-    |> Observable.subscribe handleDrag
-    |> ignore
-
   member x.Image with get() = image.Value
   member x.MainWindowCommand = mainWindowCommand
   member x.Title = image.Value |> Option.cata (constant AppTitle) (sprintf "%s - %s" AppTitle)
@@ -68,6 +57,20 @@ type MainWindowViewModel() as me =
     image.Value <- imageManager.Current
     
   member x.SelectGallery (fileDesc: FileDesc) = x.GalleryFrom(Seq.singleton fileDesc)
+
+
+type MainWindowController(model: MainWindowViewModel) =
+  let handleDrag = function
+  | DragEnter arg -> DragEventHandlers.validateDrag arg; arg.Handled <- true
+  | Drop fileList -> model.GalleryFrom(fileList)
+  | case -> Printf.kprintf dbg "Unexpected case: %A" case
+
+  member __.Initialize() =
+    model.EventStream
+    |> Observable.filter DragEventHandlers.isDragEvents
+    |> Observable.subscribe handleDrag
+    |> ignore
+
 
 type StringOptionToImageSource() =
   interface IValueConverter with
