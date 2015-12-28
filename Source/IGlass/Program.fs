@@ -36,7 +36,7 @@ let runApplication fileOpt =
 [<STAThread>]
 [<EntryPoint>]
 let main argv =
-  let appGuid = "{f2a83de1-b9ac-4461-81d0-cc4547b0b27b}"
+  let appGuid = "{09AA7BFC-BE4D-4621-B72E-A2E6259563F6}"
 
   setupEnvironment()
 
