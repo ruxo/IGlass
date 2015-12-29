@@ -3,7 +3,10 @@
 open System
 open System.IO
 open System.Windows
+open FSharp.Core.Fluent
 open RZ.Foundation
+
+open iGlass.Core
 
 let private dirExists path = if Directory.Exists path then Some path else None
 
@@ -24,13 +27,13 @@ let getPathParameter = function
 | [||] -> None
 | x -> Some x.[0]
 
-let runApplication fileOpt =
+let runApplication (fileOpt: FileDesc option) =
   let form = Views.MainWindow()
   let model = form.DataContext.cast<ViewModels.MainWindowViewModel>()
   let controller = ViewModels.MainWindowController(model)
 
   controller.Initialize()
-  Option.do' controller.SelectGallery fileOpt
+  Option.do' controller.InitGallery fileOpt
   
   Application().Run(form)
 

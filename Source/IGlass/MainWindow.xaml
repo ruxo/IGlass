@@ -8,7 +8,7 @@
   <Window.Resources>
     <ResourceDictionary>
       <model:MainWindowViewModel x:Key="model" />
-      <model:StringOptionToImageSource x:Key="appConverter" />
+      <model:ImageFromImageIndex x:Key="imageExtractor" />
       <model:DragEnterConverter x:Key="dragEnterConverter" />
       <model:DropConverter x:Key="dropConverter" />
     </ResourceDictionary>
@@ -21,6 +21,6 @@
     <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
   </i:Interaction.Triggers>      
   <Grid>
-    <Image Source="{Binding Image, Converter={StaticResource appConverter}, Mode=OneWay}"></Image>
+    <Image Source="{Binding Image, Converter={StaticResource imageExtractor}, Mode=OneWay}"></Image>
   </Grid>
 </Window>

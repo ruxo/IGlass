@@ -16,6 +16,11 @@ module FileDesc =
     | FileLocation (dir, _)
     | DirectoryLocation dir -> dir
 
+  let getDirectory fd =
+    match fd with
+    | FileLocation (dir, _) -> DirectoryLocation dir
+    | DirectoryLocation _ -> fd
+
   let file = function
     | DirectoryLocation _ -> None
     | FileLocation (_,f) -> Some f
@@ -44,6 +49,7 @@ module FileDesc =
 type FileDescEx =
   [<Extension>] static member location fd = FileDesc.location fd
   [<Extension>] static member file fd = FileDesc.file fd
+  [<Extension>] static member getDirectory fd = FileDesc.getDirectory fd
   [<Extension>] static member getFiles fd = FileDesc.getFiles fd
   [<Extension>] static member getFullPath fd = FileDesc.getFullPath fd
     
