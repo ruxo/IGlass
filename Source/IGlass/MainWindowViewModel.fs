@@ -45,16 +45,22 @@ type MainWindowViewModel() as me =
   let AppTitle = "iGLassy"
 
   let image: NotifyingValue<ImageIndex option> = me.Factory.Backing(<@ me.Image @>, None)
+  let imageCount = me.Factory.Backing(<@ me.ImageCount @>, 0)
 
   let mainWindowCommand = me.Factory.EventValueCommand()
 
-  member __.Image with get() = image.Value 
-                  and set v = image.Value <- v
-                              me.RaisePropertyChanged "Title"
+  member __.Image
+    with get() = image.Value 
+    and set v = image.Value <- v
+                me.RaisePropertyChanged "Title"
+  member __.ImageCount
+    with get() = imageCount.Value 
+    and set v = imageCount.Value <- v
+                me.RaisePropertyChanged "Title"
   member __.Title =
     match image.Value with
     | None -> AppTitle
-    | Some (img, pos) -> sprintf "%s - [%d] %s" AppTitle pos img
+    | Some (img, pos) -> sprintf "%s - [%d/%d] %s" AppTitle (pos+1) me.ImageCount img
 
   member __.MainWindowCommand = mainWindowCommand
 
@@ -64,6 +70,7 @@ type MainWindowController(model: MainWindowViewModel) =
   let galleryFrom (fdList: FileDesc seq) =
     imageManager <- ImageManager(fdList)
     model.Image <- imageManager.Current
+    model.ImageCount <- imageManager.ImageCount
 
   let handleDrag = function
   | DragEnter arg -> DragEventHandlers.validateDrag arg; arg.Handled <- true

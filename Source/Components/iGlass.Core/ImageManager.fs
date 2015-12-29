@@ -29,4 +29,5 @@ type ImageManager(source: FileDesc seq) =
   let fileList = source.collect(FileDesc.getFiles >> Seq.filter isSupported).toArray()
   let currentIndex = if fileList.Length > 0 then Some 0 else None
 
-  member x.Current: ImageIndex option = currentIndex.map(fun pos -> Array.get fileList pos, pos)
+  member __.Current: ImageIndex option = currentIndex.map(fun pos -> Array.get fileList pos, pos)
+  member __.ImageCount = fileList.Length
