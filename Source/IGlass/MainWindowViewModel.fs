@@ -67,14 +67,21 @@ type MainWindowViewModel() as me =
 type MainWindowController(model: MainWindowViewModel) =
   let mutable imageManager = ImageManager(Seq.empty)
 
-  let galleryFrom (fdList: FileDesc seq) =
+  let galleryFrom showFile (fdList: FileDesc seq) =
     imageManager <- ImageManager(fdList)
+    showFile |> Option.do' (imageManager.SelectFileName >> ignore)
     model.Image <- imageManager.Current
     model.ImageCount <- imageManager.ImageCount
 
+  let galleryFromSingleFile(fd: FileDesc) = galleryFrom (fd.file()) [fd.getDirectory()]
+
   let handleDrag = function
   | DragEnter arg -> DragEventHandlers.validateDrag arg; arg.Handled <- true
-  | Drop fileList -> galleryFrom(fileList)
+  | Drop fileList ->
+    match fileList with
+    | [] -> ()
+    | [single] -> galleryFromSingleFile single
+    | xs -> galleryFrom None xs
   | case -> Printf.kprintf dbg "Unexpected case: %A" case
 
   member __.Initialize() =
@@ -83,23 +90,27 @@ type MainWindowController(model: MainWindowViewModel) =
     |> Observable.subscribe handleDrag
     |> ignore
     
-  member __.SelectGallery (fileDesc: FileDesc) = galleryFrom(Seq.singleton fileDesc)
-
+  member __.SelectFileName filename = model.Image <- imageManager.SelectFileName(filename)
+  member __.InitGallery = galleryFromSingleFile
 
 type ImageFromImageIndex() =
   let extractImage (path, _) =
-    let bi = BitmapImage()
-    bi.BeginInit()
-    bi.UriSource <- Uri(path)
-    bi.EndInit()
-    bi
+    try
+      let bi = BitmapImage()
+      bi.BeginInit()
+      bi.UriSource <- Uri(path)
+      bi.EndInit()
+      Some bi
+    with
+    | :? NotSupportedException -> None  // possibly invalid file
 
   interface IValueConverter with
     member __.Convert(value, targetType, parameter, culture) =
       value
         .tryCast<ImageIndex option>()
         .join()
-        .map(extractImage >> box)
+        .bind(extractImage)
+        .map(box)
         .getOrElse(constant DependencyProperty.UnsetValue)
 
     member __.ConvertBack(value, targetType, parameter, culture) = DependencyProperty.UnsetValue
