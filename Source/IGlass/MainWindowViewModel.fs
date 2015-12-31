@@ -3,7 +3,6 @@
 open System
 open System.Windows
 open System.Windows.Data
-open System.Windows.Media.Imaging
 
 open FSharp.Core.Fluent
 open FSharp.ViewModule
@@ -11,46 +10,31 @@ open RZ.Foundation
 open iGlass.Core
 open System.Windows.Media
 open System.Windows.Controls
+open System.Diagnostics
+
+type ScaleModel =
+  | Manual
+  | ScaleUpToWindow
+  | FitToWindow
+  | FillWindow
+  with
+    static member toMode = function
+      | "Manual" -> Manual
+      | "ScaleUpToWindow" -> ScaleUpToWindow
+      | "FitToWindow" -> FitToWindow
+      | "FillWindow" -> FillWindow
+      | _ -> ScaleUpToWindow
 
 [<NoComparison>]
 type MainWindowEvent =
   | Invalid of string
   | DragEnter of DragEventArgs
   | Drop      of FileDesc list
-  | MouseMove of Point
-
-type ScaleModel =
-  | Manual of float
-  | ScaleUpToWindow
-  | FitToWindow
-  | FillWindow
-  with
-    static member name = function
-      | Manual _ -> "Manual Scale"
-      | ScaleUpToWindow -> "Scale Up to Window"
-      | FitToWindow -> "Fit Content to Window"
-      | FillWindow -> "Scale Content to Fill Window"
+  | Zoom of ScaleModel
 
 [<AutoOpen>]
 module private Internal =
   let dbg = Diagnostics.Debug.WriteLine
-
-module private DragEventHandlers =
-  let isDragEvents = function
-  | Drop _ | DragEnter _ -> true
-  | _ -> false
-
-  let validateDrag (arg: DragEventArgs) =
-    arg.Effects <- if arg.Data.GetDataPresent(DataFormats.FileDrop)
-                      then DragDropEffects.Copy
-                      else Printf.kprintf dbg "Dropping object: %s" <| String.Join(",", arg.Data.GetFormats())
-                           DragDropEffects.None
-
-  let getDropTarget (arg: DragEventArgs) =
-    arg.Handled <- true
-    let data = arg.Data.GetData(DataFormats.FileDrop) :?> string[]
-    data |> Seq.choose FileDesc.Verify
-         |> Seq.toList
 
 type MainWindowViewModel() as me =
   inherit EventViewModelBase<MainWindowEvent>()
@@ -63,6 +47,7 @@ type MainWindowViewModel() as me =
   let scaleMode = me.Factory.Backing(<@ me.ScaleMode @>, ScaleUpToWindow)
 
   let mainWindowCommand = me.Factory.EventValueCommand()
+  let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
 
   member __.Image
     with get() = image.Value 
@@ -82,58 +67,38 @@ type MainWindowViewModel() as me =
     | Some (img, pos) -> sprintf "%s - [%d/%d] () %s" AppTitle (pos+1) me.ImageCount img
 
   member __.MainWindowCommand = mainWindowCommand
+  member __.ZoomCommand = zoomCommand
 
 type ScaleModelConverter() =
-  let scaleModelToStretch = function
+  static let scaleModelToStretch = function
     | Manual _ -> Stretch.None
     | ScaleUpToWindow
     | FitToWindow -> Stretch.Uniform
     | FillWindow -> Stretch.UniformToFill
 
-  let scaleModelToDirection = function
+  static let scaleModelToDirection = function
+    | ScaleUpToWindow -> StretchDirection.DownOnly
     | Manual _ -> StretchDirection.Both  // ignored anyway
-    | ScaleUpToWindow
-    | FitToWindow -> StretchDirection.DownOnly
+    | FitToWindow
     | FillWindow -> StretchDirection.Both
+
+  static let scaleModelToScrollBarVisibility = function
+    | Manual _ -> ScrollBarVisibility.Auto
+    | _ -> ScrollBarVisibility.Disabled
+
+  static let converters =
+    [ typeof<Stretch>, scaleModelToStretch >> box
+      typeof<StretchDirection>, scaleModelToDirection >> box
+      typeof<ScrollBarVisibility>, scaleModelToScrollBarVisibility >> box
+    ]
 
   interface IValueConverter with
     member __.Convert(value, targetType, parameter, culture) =
-      let converter =
-        if targetType = typeof<Stretch> then
-          Some (scaleModelToStretch >> box)
-        elif targetType = typeof<StretchDirection> then
-          Some (scaleModelToDirection >> box)
-        else
-          None
-
-      converter
+      converters
+        .tryFind(fst >> (=)targetType)
+        .map(snd)
         .ap(value.tryCast<ScaleModel>())
         .getOrElse(constant DependencyProperty.UnsetValue)
 
     member __.ConvertBack(value, targetType, parameter, culture) = DependencyProperty.UnsetValue
 
-type ImageFromImageIndex() =
-  let extractImage (path, _) =
-    try
-      let bi = BitmapImage()
-      bi.BeginInit()
-      bi.UriSource <- Uri(path)
-      bi.EndInit()
-      Some bi
-    with
-    | :? NotSupportedException -> None  // possibly invalid file
-
-  interface IValueConverter with
-    member __.Convert(value, targetType, parameter, culture) =
-      value
-        .tryCast<ImageIndex option>()
-        .join()
-        .bind(extractImage)
-        .map(box)
-        .getOrElse(constant DependencyProperty.UnsetValue)
-
-    member __.ConvertBack(value, targetType, parameter, culture) = DependencyProperty.UnsetValue
-
-type private DragEventConverter = FsXaml.EventArgsConverter<DragEventArgs, MainWindowEvent>
-type DropConverter() = inherit DragEventConverter(DragEventHandlers.getDropTarget >> Drop, Invalid "DropConverter")
-type DragEnterConverter() = inherit DragEventConverter(DragEnter, Invalid "DragEnterConverter")

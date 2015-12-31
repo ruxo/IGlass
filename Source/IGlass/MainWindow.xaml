@@ -22,14 +22,19 @@
     <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
   </i:Interaction.Triggers>      
   <Grid>
-    <ScrollViewer CanContentScroll="True">
+    <ScrollViewer VerticalScrollBarVisibility="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}"
+                  HorizontalScrollBarVisibility="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}">
       <ScrollViewer.ContextMenu>
         <ContextMenu>
           <MenuItem Header="_Zoom">
-            <MenuItem Header="Scale Up to Window" />
-            <MenuItem Header="Fit to Window" />
-            <MenuItem Header="Fill to Window" />
-            <MenuItem Header="Manual" />
+            <MenuItem Header="_Scale Up to Window" IsCheckable="True" 
+                      Command="{Binding ZoomCommand}" CommandParameter="ScaleUpToWindow" />
+            <MenuItem Header="_Fit to Window" IsCheckable="True" 
+                      Command="{Binding ZoomCommand}" CommandParameter="FitToWindow" />
+            <MenuItem Header="Fil_l to Window" IsCheckable="True" 
+                      Command="{Binding ZoomCommand}" CommandParameter="FillWindow" />
+            <MenuItem Header="_Manual" IsCheckable="True" 
+                      Command="{Binding ZoomCommand}" CommandParameter="Manual" />
           </MenuItem>
         </ContextMenu>
       </ScrollViewer.ContextMenu>
