@@ -28,12 +28,16 @@
         <ContextMenu>
           <MenuItem Header="_Zoom">
             <MenuItem Header="_Scale Up to Window" IsCheckable="True" 
+                      IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=ScaleUpToWindow, Mode=OneWay}"
                       Command="{Binding ZoomCommand}" CommandParameter="ScaleUpToWindow" />
             <MenuItem Header="_Fit to Window" IsCheckable="True" 
+                      IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=FitToWindow, Mode=OneWay}"
                       Command="{Binding ZoomCommand}" CommandParameter="FitToWindow" />
             <MenuItem Header="Fil_l to Window" IsCheckable="True" 
+                      IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=FillWindow, Mode=OneWay}"
                       Command="{Binding ZoomCommand}" CommandParameter="FillWindow" />
             <MenuItem Header="_Manual" IsCheckable="True" 
+                      IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=Manual, Mode=OneWay}"
                       Command="{Binding ZoomCommand}" CommandParameter="Manual" />
           </MenuItem>
         </ContextMenu>

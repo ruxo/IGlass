@@ -70,26 +70,35 @@ type MainWindowViewModel() as me =
   member __.ZoomCommand = zoomCommand
 
 type ScaleModelConverter() =
-  static let scaleModelToStretch = function
+  static let scaleModelToStretch _ =
+    function
     | Manual _ -> Stretch.None
     | ScaleUpToWindow
     | FitToWindow -> Stretch.Uniform
     | FillWindow -> Stretch.UniformToFill
+    >> box
 
-  static let scaleModelToDirection = function
+  static let scaleModelToDirection _ =
+    function
     | ScaleUpToWindow -> StretchDirection.DownOnly
     | Manual _ -> StretchDirection.Both  // ignored anyway
     | FitToWindow
     | FillWindow -> StretchDirection.Both
+    >> box
 
-  static let scaleModelToScrollBarVisibility = function
+  static let scaleModelToScrollBarVisibility _ =
+    function
     | Manual _ -> ScrollBarVisibility.Auto
     | _ -> ScrollBarVisibility.Disabled
+    >> box
 
+  static let scaleModelToMenuItemCheckBox = ScaleModel.toMode >> (=) >> ((<<) box)
+  
   static let converters =
-    [ typeof<Stretch>, scaleModelToStretch >> box
-      typeof<StretchDirection>, scaleModelToDirection >> box
-      typeof<ScrollBarVisibility>, scaleModelToScrollBarVisibility >> box
+    [ typeof<Stretch>, scaleModelToStretch
+      typeof<StretchDirection>, scaleModelToDirection
+      typeof<ScrollBarVisibility>, scaleModelToScrollBarVisibility
+      typeof<bool>, scaleModelToMenuItemCheckBox
     ]
 
   interface IValueConverter with
@@ -97,6 +106,7 @@ type ScaleModelConverter() =
       converters
         .tryFind(fst >> (=)targetType)
         .map(snd)
+        .ap(Some <| parameter.cast<string>())
         .ap(value.tryCast<ScaleModel>())
         .getOrElse(constant DependencyProperty.UnsetValue)
 
