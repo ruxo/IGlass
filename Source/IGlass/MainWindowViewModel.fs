@@ -9,6 +9,8 @@ open FSharp.Core.Fluent
 open FSharp.ViewModule
 open RZ.Foundation
 open iGlass.Core
+open System.Windows.Media
+open System.Windows.Controls
 
 [<NoComparison>]
 type MainWindowEvent =
@@ -16,6 +18,18 @@ type MainWindowEvent =
   | DragEnter of DragEventArgs
   | Drop      of FileDesc list
   | MouseMove of Point
+
+type ScaleModel =
+  | Manual
+  | ScaleUpToWindow
+  | FitToWindow
+  | FillWindow
+  with
+    static member name = function
+      | Manual -> "Manual Scale"
+      | ScaleUpToWindow -> "Scale Up to Window"
+      | FitToWindow -> "Fit Content to Window"
+      | FillWindow -> "Scale Content to Fill Window"
 
 [<AutoOpen>]
 module private Internal =
@@ -46,6 +60,10 @@ type MainWindowViewModel() as me =
 
   let image: INotifyingValue<ImageIndex option> = me.Factory.Backing(<@ me.Image @>, None)
   let imageCount = me.Factory.Backing(<@ me.ImageCount @>, 0)
+  let scaleMode = me.Factory.Backing(<@ me.ScaleMode @>, ScaleUpToWindow)
+
+  let imageStretch = me.Factory.Backing(<@ me.ImageStretch @>, Stretch.Uniform)
+  let imageStretchDir = me.Factory.Backing(<@ me.StretchDirection @>, StretchDirection.DownOnly)
 
   let mainWindowCommand = me.Factory.EventValueCommand()
 
@@ -57,6 +75,13 @@ type MainWindowViewModel() as me =
     with get() = imageCount.Value 
     and set v = imageCount.Value <- v
                 me.RaisePropertyChanged "Title"
+  member __.ScaleMode
+    with get() = scaleMode.Value
+    and set v = scaleMode.Value <- v
+
+  member __.ImageStretch = imageStretch.Value
+  member __.StretchDirection = imageStretchDir.Value
+                
   member __.Title =
     match image.Value with
     | None -> AppTitle

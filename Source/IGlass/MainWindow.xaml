@@ -21,6 +21,8 @@
     <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
   </i:Interaction.Triggers>      
   <Grid>
-    <Image Source="{Binding Image, Converter={StaticResource imageExtractor}, Mode=OneWay}"></Image>
+    <Image Source="{Binding Image, Converter={StaticResource imageExtractor}, Mode=OneWay}"
+           Stretch="{Binding ImageStretch, Mode=OneWay}"
+           StretchDirection="{Binding StretchDirection, Mode=OneWay}"></Image>
   </Grid>
 </Window>
