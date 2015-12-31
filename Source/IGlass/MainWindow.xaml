@@ -9,6 +9,7 @@
     <ResourceDictionary>
       <model:MainWindowViewModel x:Key="model" />
       <model:ImageFromImageIndex x:Key="imageExtractor" />
+      <model:ScaleModelConverter x:Key="scaleModelConverter"/>
       <model:DragEnterConverter x:Key="dragEnterConverter" />
       <model:DropConverter x:Key="dropConverter" />
     </ResourceDictionary>
@@ -21,6 +22,30 @@
     <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
   </i:Interaction.Triggers>      
   <Grid>
-    <Image Source="{Binding Image, Converter={StaticResource imageExtractor}, Mode=OneWay}"></Image>
+    <ScrollViewer VerticalScrollBarVisibility="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}"
+                  HorizontalScrollBarVisibility="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}">
+      <ScrollViewer.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="_Zoom">
+            <MenuItem Header="_Scale Up to Window" IsCheckable="True" 
+                      IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=ScaleUpToWindow, Mode=OneWay}"
+                      Command="{Binding ZoomCommand}" CommandParameter="ScaleUpToWindow" />
+            <MenuItem Header="_Fit to Window" IsCheckable="True" 
+                      IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=FitToWindow, Mode=OneWay}"
+                      Command="{Binding ZoomCommand}" CommandParameter="FitToWindow" />
+            <MenuItem Header="Fil_l to Window" IsCheckable="True" 
+                      IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=FillWindow, Mode=OneWay}"
+                      Command="{Binding ZoomCommand}" CommandParameter="FillWindow" />
+            <MenuItem Header="_Manual" IsCheckable="True" 
+                      IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=Manual, Mode=OneWay}"
+                      Command="{Binding ZoomCommand}" CommandParameter="Manual" />
+          </MenuItem>
+        </ContextMenu>
+      </ScrollViewer.ContextMenu>
+      <Image Source="{Binding Image, Converter={StaticResource imageExtractor}, Mode=OneWay}"
+             Stretch="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}"
+             StretchDirection="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}">
+      </Image>
+    </ScrollViewer>
   </Grid>
 </Window>

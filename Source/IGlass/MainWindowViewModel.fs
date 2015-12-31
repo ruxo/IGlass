@@ -3,40 +3,38 @@
 open System
 open System.Windows
 open System.Windows.Data
-open System.Windows.Media.Imaging
 
 open FSharp.Core.Fluent
 open FSharp.ViewModule
 open RZ.Foundation
 open iGlass.Core
+open System.Windows.Media
+open System.Windows.Controls
+open System.Diagnostics
+
+type ScaleModel =
+  | Manual
+  | ScaleUpToWindow
+  | FitToWindow
+  | FillWindow
+  with
+    static member toMode = function
+      | "Manual" -> Manual
+      | "ScaleUpToWindow" -> ScaleUpToWindow
+      | "FitToWindow" -> FitToWindow
+      | "FillWindow" -> FillWindow
+      | _ -> ScaleUpToWindow
 
 [<NoComparison>]
 type MainWindowEvent =
   | Invalid of string
   | DragEnter of DragEventArgs
   | Drop      of FileDesc list
-  | MouseMove of Point
+  | Zoom of ScaleModel
 
 [<AutoOpen>]
 module private Internal =
   let dbg = Diagnostics.Debug.WriteLine
-
-module private DragEventHandlers =
-  let isDragEvents = function
-  | Drop _ | DragEnter _ -> true
-  | _ -> false
-
-  let validateDrag (arg: DragEventArgs) =
-    arg.Effects <- if arg.Data.GetDataPresent(DataFormats.FileDrop)
-                      then DragDropEffects.Copy
-                      else Printf.kprintf dbg "Dropping object: %s" <| String.Join(",", arg.Data.GetFormats())
-                           DragDropEffects.None
-
-  let getDropTarget (arg: DragEventArgs) =
-    arg.Handled <- true
-    let data = arg.Data.GetData(DataFormats.FileDrop) :?> string[]
-    data |> Seq.choose FileDesc.Verify
-         |> Seq.toList
 
 type MainWindowViewModel() as me =
   inherit EventViewModelBase<MainWindowEvent>()
@@ -46,8 +44,10 @@ type MainWindowViewModel() as me =
 
   let image: INotifyingValue<ImageIndex option> = me.Factory.Backing(<@ me.Image @>, None)
   let imageCount = me.Factory.Backing(<@ me.ImageCount @>, 0)
+  let scaleMode = me.Factory.Backing(<@ me.ScaleMode @>, ScaleUpToWindow)
 
   let mainWindowCommand = me.Factory.EventValueCommand()
+  let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
 
   member __.Image
     with get() = image.Value 
@@ -57,63 +57,58 @@ type MainWindowViewModel() as me =
     with get() = imageCount.Value 
     and set v = imageCount.Value <- v
                 me.RaisePropertyChanged "Title"
+  member __.ScaleMode
+    with get() = scaleMode.Value
+    and set v = scaleMode.Value <- v
+
   member __.Title =
     match image.Value with
     | None -> AppTitle
     | Some (img, pos) -> sprintf "%s - [%d/%d] () %s" AppTitle (pos+1) me.ImageCount img
 
   member __.MainWindowCommand = mainWindowCommand
+  member __.ZoomCommand = zoomCommand
 
-type MainWindowController(model: MainWindowViewModel) =
-  let mutable imageManager = ImageManager(Seq.empty)
+type ScaleModelConverter() =
+  static let scaleModelToStretch _ =
+    function
+    | Manual _ -> Stretch.None
+    | ScaleUpToWindow
+    | FitToWindow -> Stretch.Uniform
+    | FillWindow -> Stretch.UniformToFill
+    >> box
 
-  let galleryFrom showFile (fdList: FileDesc seq) =
-    imageManager <- ImageManager(fdList)
-    model.Image <- showFile |> Option.bind imageManager.FindFileName
-    model.ImageCount <- imageManager.ImageCount
+  static let scaleModelToDirection _ =
+    function
+    | ScaleUpToWindow -> StretchDirection.DownOnly
+    | Manual _ -> StretchDirection.Both  // ignored anyway
+    | FitToWindow
+    | FillWindow -> StretchDirection.Both
+    >> box
 
-  let galleryFromSingleFile(fd: FileDesc) = galleryFrom (fd.file()) [fd.getDirectory()]
+  static let scaleModelToScrollBarVisibility _ =
+    function
+    | Manual _ -> ScrollBarVisibility.Auto
+    | _ -> ScrollBarVisibility.Disabled
+    >> box
 
-  let handleDrag = function
-  | DragEnter arg -> DragEventHandlers.validateDrag arg; arg.Handled <- true
-  | Drop fileList ->
-    match fileList with
-    | [] -> ()
-    | [single] -> galleryFromSingleFile single
-    | xs -> galleryFrom None xs
-  | case -> Printf.kprintf dbg "Unexpected case: %A" case
-
-  member __.Initialize() =
-    model.EventStream
-    |> Observable.filter DragEventHandlers.isDragEvents
-    |> Observable.subscribe handleDrag
-    |> ignore
-    
-  member __.SelectFileName filename = model.Image <- imageManager.FindFileName(filename)
-  member __.InitGallery = galleryFromSingleFile
-
-type ImageFromImageIndex() =
-  let extractImage (path, _) =
-    try
-      let bi = BitmapImage()
-      bi.BeginInit()
-      bi.UriSource <- Uri(path)
-      bi.EndInit()
-      Some bi
-    with
-    | :? NotSupportedException -> None  // possibly invalid file
+  static let scaleModelToMenuItemCheckBox = ScaleModel.toMode >> (=) >> ((<<) box)
+  
+  static let converters =
+    [ typeof<Stretch>, scaleModelToStretch
+      typeof<StretchDirection>, scaleModelToDirection
+      typeof<ScrollBarVisibility>, scaleModelToScrollBarVisibility
+      typeof<bool>, scaleModelToMenuItemCheckBox
+    ]
 
   interface IValueConverter with
     member __.Convert(value, targetType, parameter, culture) =
-      value
-        .tryCast<ImageIndex option>()
-        .join()
-        .bind(extractImage)
-        .map(box)
+      converters
+        .tryFind(fst >> (=)targetType)
+        .map(snd)
+        .ap(Some <| parameter.cast<string>())
+        .ap(value.tryCast<ScaleModel>())
         .getOrElse(constant DependencyProperty.UnsetValue)
 
     member __.ConvertBack(value, targetType, parameter, culture) = DependencyProperty.UnsetValue
 
-type private DragEventConverter = FsXaml.EventArgsConverter<DragEventArgs, MainWindowEvent>
-type DropConverter() = inherit DragEventConverter(DragEventHandlers.getDropTarget >> Drop, Invalid "DropConverter")
-type DragEnterConverter() = inherit DragEventConverter(DragEnter, Invalid "DragEnterConverter")
