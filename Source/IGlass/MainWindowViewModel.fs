@@ -42,9 +42,9 @@ type MainWindowViewModel() as me =
   inherit EventViewModelBase<MainWindowEvent>()
 
   [<Literal>]
-  let AppTitle = "iGLassy"
+  let AppTitle = "iGlassy"
 
-  let image: NotifyingValue<ImageIndex option> = me.Factory.Backing(<@ me.Image @>, None)
+  let image: INotifyingValue<ImageIndex option> = me.Factory.Backing(<@ me.Image @>, None)
   let imageCount = me.Factory.Backing(<@ me.ImageCount @>, 0)
 
   let mainWindowCommand = me.Factory.EventValueCommand()
@@ -60,7 +60,7 @@ type MainWindowViewModel() as me =
   member __.Title =
     match image.Value with
     | None -> AppTitle
-    | Some (img, pos) -> sprintf "%s - [%d/%d] %s" AppTitle (pos+1) me.ImageCount img
+    | Some (img, pos) -> sprintf "%s - [%d/%d] () %s" AppTitle (pos+1) me.ImageCount img
 
   member __.MainWindowCommand = mainWindowCommand
 
@@ -69,8 +69,7 @@ type MainWindowController(model: MainWindowViewModel) =
 
   let galleryFrom showFile (fdList: FileDesc seq) =
     imageManager <- ImageManager(fdList)
-    showFile |> Option.do' (imageManager.SelectFileName >> ignore)
-    model.Image <- imageManager.Current
+    model.Image <- showFile |> Option.bind imageManager.FindFileName
     model.ImageCount <- imageManager.ImageCount
 
   let galleryFromSingleFile(fd: FileDesc) = galleryFrom (fd.file()) [fd.getDirectory()]
@@ -90,7 +89,7 @@ type MainWindowController(model: MainWindowViewModel) =
     |> Observable.subscribe handleDrag
     |> ignore
     
-  member __.SelectFileName filename = model.Image <- imageManager.SelectFileName(filename)
+  member __.SelectFileName filename = model.Image <- imageManager.FindFileName(filename)
   member __.InitGallery = galleryFromSingleFile
 
 type ImageFromImageIndex() =

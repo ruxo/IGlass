@@ -3,6 +3,7 @@
 open System
 open System.IO
 open FSharp.Core.Fluent
+open RZ
 open RZ.Foundation
 
 type FilePath = string
@@ -31,15 +32,13 @@ type ImageManager(source: FileDesc seq) =
                    .collect(FileDesc.getFiles >> Seq.filter isSupported)
                    .distinct()
                    .toArray()
-  let mutable currentIndex = if fileList.Length > 0 then Some 0 else None
-
   let icmp st (ss:string) = ss.Equals(st, StringComparison.OrdinalIgnoreCase)
 
-  member __.Current: ImageIndex option = currentIndex.map(fun pos -> Array.get fileList pos, pos)
   member __.ImageCount = fileList.Length
 
-  member __.SelectFileName filename =
+  member __.FindFileName filename :ImageIndex option =
     fileList
       .tryFindIndex(Path.GetFileName >> icmp filename)
       .map(fun i -> fileList.[i], i)
-    |> sideEffect (Option.do' (fun (_,i) -> currentIndex <- Some i))
+
+  member __.GetFileName idx :ImageIndex option = Array.tryItem idx fileList |> Option.map (Pair.with' idx)
