@@ -13,3 +13,4 @@ nuget System.Drawing.PSD 0.1.0 framework: >= net40
 nuget Unofficial.Ionic.Zip
 
 gist ruxo/a9244a6dfe5e73337261 common.fs
+gist ruxo/5e1e84865bafd17e3a34 pair.fs
