@@ -20,13 +20,13 @@ type MainWindowEvent =
   | MouseMove of Point
 
 type ScaleModel =
-  | Manual
+  | Manual of float
   | ScaleUpToWindow
   | FitToWindow
   | FillWindow
   with
     static member name = function
-      | Manual -> "Manual Scale"
+      | Manual _ -> "Manual Scale"
       | ScaleUpToWindow -> "Scale Up to Window"
       | FitToWindow -> "Fit Content to Window"
       | FillWindow -> "Scale Content to Fill Window"
@@ -62,9 +62,6 @@ type MainWindowViewModel() as me =
   let imageCount = me.Factory.Backing(<@ me.ImageCount @>, 0)
   let scaleMode = me.Factory.Backing(<@ me.ScaleMode @>, ScaleUpToWindow)
 
-  let imageStretch = me.Factory.Backing(<@ me.ImageStretch @>, Stretch.Uniform)
-  let imageStretchDir = me.Factory.Backing(<@ me.StretchDirection @>, StretchDirection.DownOnly)
-
   let mainWindowCommand = me.Factory.EventValueCommand()
 
   member __.Image
@@ -79,9 +76,6 @@ type MainWindowViewModel() as me =
     with get() = scaleMode.Value
     and set v = scaleMode.Value <- v
 
-  member __.ImageStretch = imageStretch.Value
-  member __.StretchDirection = imageStretchDir.Value
-                
   member __.Title =
     match image.Value with
     | None -> AppTitle
@@ -89,6 +83,34 @@ type MainWindowViewModel() as me =
 
   member __.MainWindowCommand = mainWindowCommand
 
+type ScaleModelConverter() =
+  let scaleModelToStretch = function
+    | Manual _ -> Stretch.None
+    | ScaleUpToWindow
+    | FitToWindow -> Stretch.Uniform
+    | FillWindow -> Stretch.UniformToFill
+
+  let scaleModelToDirection = function
+    | Manual _ -> StretchDirection.Both  // ignored anyway
+    | ScaleUpToWindow
+    | FitToWindow -> StretchDirection.DownOnly
+    | FillWindow -> StretchDirection.Both
+
+  interface IValueConverter with
+    member __.Convert(value, targetType, parameter, culture) =
+      let converter =
+        if targetType = typeof<Stretch> then
+          Some (scaleModelToStretch >> box)
+        elif targetType = typeof<StretchDirection> then
+          Some (scaleModelToDirection >> box)
+        else
+          None
+
+      converter
+        .ap(value.tryCast<ScaleModel>())
+        .getOrElse(constant DependencyProperty.UnsetValue)
+
+    member __.ConvertBack(value, targetType, parameter, culture) = DependencyProperty.UnsetValue
 
 type ImageFromImageIndex() =
   let extractImage (path, _) =
