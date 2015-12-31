@@ -3,6 +3,7 @@
     [ ] Navigate with Left/Right arrow
     [ ] Recent files and recent folders
     [ ] Show zoom level on title bar.
+    [*] Select zoom mode from menu context: None, Scale up to Window (Default), Fit to Window, Fill Window.
     [✓] Split current index data out of Image Manager
 20151228
     [✓] Separate controller logic out of Main Window View Model.

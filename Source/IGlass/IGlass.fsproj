@@ -60,6 +60,7 @@
     <Compile Include="GlobalSetting.fs" />
     <Compile Include="InstanceManagement.fs" />
     <Compile Include="MainWindowViewModel.fs" />
+    <Compile Include="MainWindowController.fs" />
     <Compile Include="Views.fs" />
     <Compile Include="Program.fs" />
     <Resource Include="MainWindow.xaml" />
