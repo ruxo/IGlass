@@ -45,6 +45,7 @@ type MainWindowViewModel() as me =
   let image: INotifyingValue<ImageIndex option> = me.Factory.Backing(<@ me.Image @>, None)
   let imageCount = me.Factory.Backing(<@ me.ImageCount @>, 0)
   let scaleMode = me.Factory.Backing(<@ me.ScaleMode @>, ScaleUpToWindow)
+  let scale = me.Factory.Backing(<@ me.Scale @>, 1.0)
 
   let mainWindowCommand = me.Factory.EventValueCommand()
   let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
@@ -57,9 +58,11 @@ type MainWindowViewModel() as me =
     with get() = imageCount.Value 
     and set v = imageCount.Value <- v
                 me.RaisePropertyChanged "Title"
-  member __.ScaleMode
-    with get() = scaleMode.Value
-    and set v = scaleMode.Value <- v
+  member __.Scale
+    with get() = scale.Value
+    and set v = scale.Value <- v
+                scaleMode.Value <- Manual
+  member __.ScaleMode with get() = scaleMode.Value and set v = scaleMode.Value <- v
 
   member __.Title =
     match image.Value with
