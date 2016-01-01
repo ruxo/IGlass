@@ -4,7 +4,8 @@
         xmlns:fsx="clr-namespace:FsXaml;assembly=FsXaml.Wpf"
         xmlns:model="clr-namespace:iGlass.ViewModels;assembly=IGlass"
         Title="{Binding Title, Mode=OneWay}"
-        AllowDrop="true" Background="DimGray">
+        AllowDrop="true" Background="DimGray"
+        MinWidth="1 in" MinHeight="1 in">
   <Window.Resources>
     <ResourceDictionary>
       <model:MainWindowViewModel x:Key="model" />
@@ -21,9 +22,12 @@
     <i:EventTrigger EventName="DragEnter"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dragEnterConverter}" /></i:EventTrigger>
     <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
   </i:Interaction.Triggers>      
-  <Grid>
-    <ScrollViewer VerticalScrollBarVisibility="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}"
-                  HorizontalScrollBarVisibility="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}">
+  <DockPanel>
+    <ScrollViewer x:Name="imageView"
+                  VerticalScrollBarVisibility="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}"
+                  HorizontalScrollBarVisibility="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}"
+                  SizeChanged="NotifyViewportChanged"
+                  PanningMode="Both">
       <ScrollViewer.ContextMenu>
         <ContextMenu>
           <MenuItem Header="_Zoom">
@@ -47,5 +51,5 @@
              StretchDirection="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}">
       </Image>
     </ScrollViewer>
-  </Grid>
+  </DockPanel>
 </Window>

@@ -11,6 +11,7 @@ open iGlass.Core
 open System.Windows.Media
 open System.Windows.Controls
 open System.Diagnostics
+open FSharp.Core.Printf
 
 type ScaleModel =
   | Manual
@@ -27,14 +28,10 @@ type ScaleModel =
 
 [<NoComparison>]
 type MainWindowEvent =
-  | Invalid of string
-  | DragEnter of DragEventArgs
-  | Drop      of FileDesc list
-  | Zoom of ScaleModel
-
-[<AutoOpen>]
-module private Internal =
-  let dbg = Diagnostics.Debug.WriteLine
+  | Invalid             of string
+  | DragEnter           of DragEventArgs
+  | Drop                of FileDesc list
+  | Zoom                of ScaleModel
 
 type MainWindowViewModel() as me =
   inherit EventViewModelBase<MainWindowEvent>()
@@ -46,6 +43,7 @@ type MainWindowViewModel() as me =
   let imageCount = me.Factory.Backing(<@ me.ImageCount @>, 0)
   let scaleMode = me.Factory.Backing(<@ me.ScaleMode @>, ScaleUpToWindow)
   let scale = me.Factory.Backing(<@ me.Scale @>, 1.0)
+  let viewSize = me.Factory.Backing(<@ me.ViewSize @>, Size(0.,0.))
 
   let mainWindowCommand = me.Factory.EventValueCommand()
   let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
@@ -63,6 +61,8 @@ type MainWindowViewModel() as me =
     and set v = scale.Value <- v
                 scaleMode.Value <- Manual
   member __.ScaleMode with get() = scaleMode.Value and set v = scaleMode.Value <- v
+
+  member __.ViewSize with get() = viewSize.Value and set v = viewSize.Value <- v
 
   member __.Title =
     match image.Value with

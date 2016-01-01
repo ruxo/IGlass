@@ -7,17 +7,13 @@ open System.Windows.Data
 open FSharp.Core.Fluent
 open RZ.Foundation
 open iGlass.Core
+open System.Diagnostics
 
 module private DragEventHandlers =
-  let isDragEvents = function
-  | Drop _ | DragEnter _ -> true
-  | _ -> false
-
   let validateDrag (arg: DragEventArgs) =
     arg.Effects <- if arg.Data.GetDataPresent(DataFormats.FileDrop)
                       then DragDropEffects.Copy
-                      else Printf.kprintf dbg "Dropping object: %s" <| String.Join(",", arg.Data.GetFormats())
-                           DragDropEffects.None
+                      else DragDropEffects.None
 
   let getDropTarget (arg: DragEventArgs) =
     arg.Handled <- true
@@ -72,7 +68,7 @@ type MainWindowController(model: MainWindowViewModel) =
     | [single] -> galleryFromSingleFile single
     | xs -> galleryFrom None xs
   | Zoom zoom -> changeZoom zoom
-  | Invalid case -> Printf.kprintf dbg "Invalid: %s" case
+  | Invalid case -> Printf.kprintf Debug.WriteLine "Invalid: %s" case
 
   member __.Initialize() = model.EventStream |> Observable.subscribe handleEvents |> ignore
     
