@@ -12,6 +12,7 @@ open System.Windows.Media
 open System.Windows.Controls
 open System.Diagnostics
 open FSharp.Core.Printf
+open System.Windows.Media.Imaging
 
 type ScaleModel =
   | Manual
@@ -33,12 +34,26 @@ type MainWindowEvent =
   | Drop                of FileDesc list
   | Zoom                of ScaleModel
 
+module ImageLoader =
+  let extractImage path =
+    try
+      let bi = BitmapImage()
+      bi.BeginInit()
+      bi.UriSource <- Uri(path)
+      bi.EndInit()
+      Some (bi :> ImageSource)
+    with
+    | :? NotSupportedException -> None  // possibly invalid file
+
 type MainWindowViewModel() as me =
   inherit EventViewModelBase<MainWindowEvent>()
 
   [<Literal>]
   let AppTitle = "iGlassy"
 
+  let EmptySource = DependencyProperty.UnsetValue
+
+  let mutable imageSource: obj = EmptySource
   let image: INotifyingValue<ImageIndex option> = me.Factory.Backing(<@ me.Image @>, None)
   let imageCount = me.Factory.Backing(<@ me.ImageCount @>, 0)
   let scaleMode = me.Factory.Backing(<@ me.ScaleMode @>, ScaleUpToWindow)
@@ -48,14 +63,20 @@ type MainWindowViewModel() as me =
   let mainWindowCommand = me.Factory.EventValueCommand()
   let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
 
+  let reloadImageSource (v: ImageIndex option) =
+    v.map(fst >> ImageLoader.extractImage >> Option.map box >> Option.getOrElse (constant EmptySource))
+     .do'(fun bmp -> imageSource <- bmp; me.RaisePropertyChanged "ImageSource")
+
   member __.Image
     with get() = image.Value 
     and set v = image.Value <- v
+                reloadImageSource v
                 me.RaisePropertyChanged "Title"
   member __.ImageCount
     with get() = imageCount.Value 
     and set v = imageCount.Value <- v
                 me.RaisePropertyChanged "Title"
+  member __.ImageSource = imageSource
   member __.Scale
     with get() = scale.Value
     and set v = scale.Value <- v
@@ -67,7 +88,7 @@ type MainWindowViewModel() as me =
   member __.Title =
     match image.Value with
     | None -> AppTitle
-    | Some (img, pos) -> sprintf "%s - [%d/%d] () %s" AppTitle (pos+1) me.ImageCount img
+    | Some (img, pos) -> sprintf "%s - [%d/%d] (%.3f) %s" AppTitle (pos+1) me.ImageCount scale.Value img
 
   member __.MainWindowCommand = mainWindowCommand
   member __.ZoomCommand = zoomCommand

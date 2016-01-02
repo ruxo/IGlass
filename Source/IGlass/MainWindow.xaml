@@ -9,7 +9,6 @@
   <Window.Resources>
     <ResourceDictionary>
       <model:MainWindowViewModel x:Key="model" />
-      <model:ImageFromImageIndex x:Key="imageExtractor" />
       <model:ScaleModelConverter x:Key="scaleModelConverter"/>
       <model:DragEnterConverter x:Key="dragEnterConverter" />
       <model:DropConverter x:Key="dropConverter" />
@@ -46,7 +45,7 @@
           </MenuItem>
         </ContextMenu>
       </ScrollViewer.ContextMenu>
-      <Image Source="{Binding Image, Converter={StaticResource imageExtractor}, Mode=OneWay}"
+      <Image Source="{Binding ImageSource, Mode=OneWay}"
              Stretch="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}"
              StretchDirection="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}">
       </Image>
