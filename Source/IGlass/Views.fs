@@ -10,6 +10,8 @@ type MainWindow() as me =
   inherit Window()
     
   do me.InitializeCodeBehind("MainWindow.xaml")
+     me.InstallCommandForwarder()
+
   let imageView = me.FindName("imageView") :?> ScrollViewer
 
   let getDataContext() = Option.ofObj me.DataContext

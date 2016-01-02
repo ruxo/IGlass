@@ -2,6 +2,7 @@
 
 open System
 open System.Windows
+open System.Windows.Input
 open System.Windows.Data
 
 open FSharp.Core.Fluent
@@ -14,6 +15,7 @@ open FSharp.Core.Printf
 open System.Windows.Media.Imaging
 open RZ.Foundation
 open RZ.Extensions
+open RZ.Wpf.CodeBehind
 
 type ScaleModel =
   | Manual
@@ -34,6 +36,8 @@ type MainWindowEvent =
   | DragEnter           of DragEventArgs
   | Drop                of FileDesc list
   | Zoom                of ScaleModel
+  | NextPage
+  | LastPage
 
 module ImageLoader =
   let extractImage path =
@@ -52,6 +56,8 @@ type MainWindowViewModel() as me =
 
   [<Literal>]
   let AppTitle = "iGlassy"
+
+  let modelEvent = Event<MainWindowEvent>()
 
   let EmptySource = DependencyProperty.UnsetValue
 
@@ -87,6 +93,14 @@ type MainWindowViewModel() as me =
 
     | FitToWindow -> min (viewSize.Width / imageSize.Width) (viewSize.Height / imageSize.Height)
     | FillWindow -> max (viewSize.Width / imageSize.Width) (viewSize.Height / imageSize.Height)
+
+  let commandCenter =
+    [ NavigationCommands.NextPage |> CommandMap.to' (constant NextPage)
+      NavigationCommands.LastPage |> CommandMap.to' (constant LastPage) ]
+    |> CommandControlCenter (sideEffect (fun _ -> Debug.WriteLine("xxx")) >> modelEvent.Trigger)
+
+  interface ICommandHandler with
+    member __.ControlCenter = commandCenter 
 
   member private __.RecalcScale(bmp: ImageSource) = 
     scale.Value <- recalcScale scaleMode.Value viewSize.Value (Size(bmp.Width, bmp.Height))
@@ -143,6 +157,7 @@ type MainWindowViewModel() as me =
   member __.MainWindowCommand = mainWindowCommand
   member __.ZoomCommand = zoomCommand
 
+  member __.ViewEvents = modelEvent.Publish :> IObservable<MainWindowEvent>
 
 type ScaleModelConverter() =
   static let scaleModelToStretch _ =

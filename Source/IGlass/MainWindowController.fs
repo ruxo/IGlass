@@ -42,9 +42,13 @@ type MainWindowController(model: MainWindowViewModel) =
     | [single] -> galleryFromSingleFile single
     | xs -> galleryFrom None xs
   | Zoom zoom -> changeZoom zoom
+  | LastPage
+  | NextPage -> Debug.WriteLine("Next/Last page")
   | Invalid case -> Printf.kprintf Debug.WriteLine "Invalid: %s" case
 
-  member __.Initialize() = model.EventStream |> Observable.subscribe handleEvents |> ignore
+  member __.Initialize() =
+    model.EventStream |> Observable.subscribe handleEvents |> ignore
+    model.ViewEvents |> Observable.subscribe handleEvents |> ignore
     
   member __.SelectFileName filename = model.Image <- imageManager.FindFileName(filename)
   member __.InitGallery = galleryFromSingleFile

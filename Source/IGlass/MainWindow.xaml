@@ -17,6 +17,10 @@
   <Window.DataContext>
     <Binding Source="{StaticResource model}" />
   </Window.DataContext>
+  <Window.InputBindings>
+    <KeyBinding Command="NextPage" Key="Right" />
+    <KeyBinding Command="LastPage" Key="Left" />
+  </Window.InputBindings>
   <i:Interaction.Triggers>
     <i:EventTrigger EventName="DragEnter"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dragEnterConverter}" /></i:EventTrigger>
     <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
