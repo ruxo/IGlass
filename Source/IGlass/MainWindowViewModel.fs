@@ -62,8 +62,20 @@ type MainWindowViewModel() as me =
   let scale = me.Factory.Backing(<@ me.Scale @>, 1.0)
   let viewSize = me.Factory.Backing(<@ me.ViewSize @>, Size(1.,1.))
 
+  static let isVertOverflow (viewSize: Size) (imageSize: Size) = (viewSize.Width / imageSize.Width) > (viewSize.Height / imageSize.Height)
+  static let showScroll = function
+    | true -> ScrollBarVisibility.Visible
+    | false -> ScrollBarVisibility.Hidden
+
+  static let getNormalScrollVisibility scaleMode =
+    match scaleMode with
+    | Manual _ -> Some ScrollBarVisibility.Auto
+    | FillWindow -> None
+    | _ -> Some ScrollBarVisibility.Disabled
+
   let mainWindowCommand = me.Factory.EventValueCommand()
   let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
+  let getImageSize() = imageSource.map(fun bmp -> Size(bmp.Width, bmp.Height))
 
   let rec recalcScale scaleMode (viewSize: Size) (imageSize: Size) =
     match scaleMode with
@@ -79,6 +91,8 @@ type MainWindowViewModel() as me =
   member private __.RecalcScale(bmp: ImageSource) = 
     scale.Value <- recalcScale scaleMode.Value viewSize.Value (Size(bmp.Width, bmp.Height))
     me.RaisePropertyChanged "ScaleApply"
+    me.RaisePropertyChanged "HScrollbarVisibility"
+    me.RaisePropertyChanged "VScrollbarVisibility"
     me.RaisePropertyChanged "Title"
 
   member __.Image with get() = image.Value 
@@ -109,6 +123,17 @@ type MainWindowViewModel() as me =
     | Manual -> scale.Value
     | _ -> 1.
 
+  member __.HScrollbarVisibility = 
+    scaleMode.Value
+      |> getNormalScrollVisibility
+      |> Option.orTry (getImageSize >> Option.map ((not << isVertOverflow viewSize.Value) >> showScroll))
+      |> Option.getOrElse (constant ScrollBarVisibility.Disabled)
+  member __.VScrollbarVisibility = 
+    scaleMode.Value
+      |> getNormalScrollVisibility
+      |> Option.orTry (getImageSize >> Option.map (isVertOverflow viewSize.Value >> showScroll))
+      |> Option.getOrElse (constant ScrollBarVisibility.Disabled)
+
   member __.Title =
     match image.Value with
     | None -> AppTitle
@@ -135,24 +160,11 @@ type ScaleModelConverter() =
     | FillWindow -> StretchDirection.Both
     >> box
 
-  static let scaleModelToScrollBarVisibility (param: string) =
-    function
-    | Manual _ -> ScrollBarVisibility.Auto
-    | FillWindow ->
-      let scaleWidth = (viewSize.Width / imageSize.Width) > (viewSize.Height / imageSize.Height)
-      if param.Equals("vert", StringComparison.OrdinalIgnoreCase) then
-        if scaleWidth then ScrollBarVisibility.Visible else ScrollBarVisibility.Hidden
-      else
-        if scaleWidth then ScrollBarVisibility.Hidden else ScrollBarVisibility.Visible
-    | _ -> ScrollBarVisibility.Disabled
-    >> box
-
   static let scaleModelToMenuItemCheckBox = ScaleModel.toMode >> (=) >> ((<<) box)
   
   static let converters =
     [ typeof<Stretch>, scaleModelToStretch
       typeof<StretchDirection>, scaleModelToDirection
-      typeof<ScrollBarVisibility>, scaleModelToScrollBarVisibility
       typeof<bool>, scaleModelToMenuItemCheckBox
     ]
 

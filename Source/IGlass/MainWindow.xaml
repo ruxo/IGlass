@@ -23,8 +23,8 @@
   </i:Interaction.Triggers>      
   <DockPanel>
     <ScrollViewer x:Name="imageView"
-                  VerticalScrollBarVisibility="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}"
-                  HorizontalScrollBarVisibility="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}"
+                  VerticalScrollBarVisibility="{Binding VScrollbarVisibility, Mode=OneWay}"
+                  HorizontalScrollBarVisibility="{Binding HScrollbarVisibility, Mode=OneWay}"
                   SizeChanged="NotifyViewportChanged"
                   PanningMode="Both">
       <ScrollViewer.ContextMenu>
