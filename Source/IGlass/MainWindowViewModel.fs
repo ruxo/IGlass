@@ -62,11 +62,20 @@ type MainWindowViewModel() as me =
   let scale = me.Factory.Backing(<@ me.Scale @>, 1.0)
   let viewSize = me.Factory.Backing(<@ me.ViewSize @>, Size(1.,1.))
 
+  static let isVertOverflow (viewSize: Size) (imageSize: Size) = (viewSize.Width / imageSize.Width) > (viewSize.Height / imageSize.Height)
+  static let showScroll = function
+    | true -> ScrollBarVisibility.Visible
+    | false -> ScrollBarVisibility.Hidden
+
+  static let getNormalScrollVisibility scaleMode =
+    match scaleMode with
+    | Manual _ -> Some ScrollBarVisibility.Auto
+    | FillWindow -> None
+    | _ -> Some ScrollBarVisibility.Disabled
+
   let mainWindowCommand = me.Factory.EventValueCommand()
   let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
-
-  let reloadImageSource (v: ImageIndex option) =
-    v.map(fst >> ImageLoader.extractImage >> Option.map box >> Option.getOrElse (constant EmptySource))
+  let getImageSize() = imageSource.map(fun bmp -> Size(bmp.Width, bmp.Height))
 
   let rec recalcScale scaleMode (viewSize: Size) (imageSize: Size) =
     match scaleMode with
@@ -82,36 +91,49 @@ type MainWindowViewModel() as me =
   member private __.RecalcScale(bmp: ImageSource) = 
     scale.Value <- recalcScale scaleMode.Value viewSize.Value (Size(bmp.Width, bmp.Height))
     me.RaisePropertyChanged "ScaleApply"
+    me.RaisePropertyChanged "HScrollbarVisibility"
+    me.RaisePropertyChanged "VScrollbarVisibility"
     me.RaisePropertyChanged "Title"
 
-  member __.Image
-    with get() = image.Value 
-    and set v = image.Value <- v
-                imageSource <- v.bind(fst >> ImageLoader.extractImage)
-                imageSource.do' me.RecalcScale
-                me.RaisePropertyChanged "ImageSource"
-  member __.ImageCount
-    with get() = imageCount.Value 
-    and set v = imageCount.Value <- v
-                me.RaisePropertyChanged "Title"
-  member __.ImageSource = imageSource.map(box).getOrElse(constant EmptySource)
+  member __.Image with get() = image.Value 
+                  and set v = image.Value <- v
+                              imageSource <- v.bind(fst >> ImageLoader.extractImage)
+                              imageSource.do' me.RecalcScale
+                              me.RaisePropertyChanged "ImageSource"
+  member __.ImageCount with get() = imageCount.Value 
+                       and set v = imageCount.Value <- v
+                                   me.RaisePropertyChanged "Title"
   member __.Scale with get() = scale.Value
                   and set v = scale.Value <- v
                               scaleMode.Value <- Manual
+  member __.ScaleMode with get() = scaleMode.Value 
+                      and set v = scaleMode.Value <- v
+                                  imageSource.do' me.RecalcScale
+                                  me.RaisePropertyChanged "ScaleApply"
+  member __.ViewSize with get() = viewSize.Value and set v = viewSize.Value <- v; imageSource.do' me.RecalcScale
+
+  (********* Derived Properties *********)
+  member __.ImageSource = imageSource.map(box).getOrElse(constant EmptySource)
 
   /// <summary>
   /// Transformation scale that should be applied to image.
   /// </summary>
   member __.ScaleApply =
     match scaleMode.Value with
+    | FillWindow
     | Manual -> scale.Value
     | _ -> 1.
-  member __.ScaleMode with get() = scaleMode.Value 
-                      and set v = scaleMode.Value <- v
-                                  imageSource.do' me.RecalcScale
-                                  me.RaisePropertyChanged "ScaleApply"
 
-  member __.ViewSize with get() = viewSize.Value and set v = viewSize.Value <- v; imageSource.do' me.RecalcScale
+  member __.HScrollbarVisibility = 
+    scaleMode.Value
+      |> getNormalScrollVisibility
+      |> Option.orTry (getImageSize >> Option.map ((not << isVertOverflow viewSize.Value) >> showScroll))
+      |> Option.getOrElse (constant ScrollBarVisibility.Disabled)
+  member __.VScrollbarVisibility = 
+    scaleMode.Value
+      |> getNormalScrollVisibility
+      |> Option.orTry (getImageSize >> Option.map (isVertOverflow viewSize.Value >> showScroll))
+      |> Option.getOrElse (constant ScrollBarVisibility.Disabled)
 
   member __.Title =
     match image.Value with
@@ -121,27 +143,22 @@ type MainWindowViewModel() as me =
   member __.MainWindowCommand = mainWindowCommand
   member __.ZoomCommand = zoomCommand
 
+
 type ScaleModelConverter() =
   static let scaleModelToStretch _ =
     function
+    | FillWindow
     | Manual _ -> Stretch.None
     | ScaleUpToWindow
     | FitToWindow -> Stretch.Uniform
-    | FillWindow -> Stretch.UniformToFill
     >> box
 
   static let scaleModelToDirection _ =
     function
     | ScaleUpToWindow -> StretchDirection.DownOnly
+    | FillWindow
     | Manual _ -> StretchDirection.Both  // ignored anyway
-    | FitToWindow
-    | FillWindow -> StretchDirection.Both
-    >> box
-
-  static let scaleModelToScrollBarVisibility _ =
-    function
-    | Manual _ -> ScrollBarVisibility.Auto
-    | _ -> ScrollBarVisibility.Disabled
+    | FitToWindow -> StretchDirection.Both
     >> box
 
   static let scaleModelToMenuItemCheckBox = ScaleModel.toMode >> (=) >> ((<<) box)
@@ -149,7 +166,6 @@ type ScaleModelConverter() =
   static let converters =
     [ typeof<Stretch>, scaleModelToStretch
       typeof<StretchDirection>, scaleModelToDirection
-      typeof<ScrollBarVisibility>, scaleModelToScrollBarVisibility
       typeof<bool>, scaleModelToMenuItemCheckBox
     ]
 

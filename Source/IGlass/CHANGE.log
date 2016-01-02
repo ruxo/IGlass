@@ -1,7 +1,4 @@
-﻿20151229
-    [✓] Show zoom level on title bar.
-    [ ] Navigate with Left/Right arrow
-    [ ] Add scrollbar when switching mode to FillWindow
+﻿    [ ] Navigate with Left/Right arrow
     [ ] Animate GIF
     [ ] Recent files and recent folders
     [ ] Prevent file lock during viewing
@@ -10,6 +7,10 @@
     [ ] Given app is running
         When invalid file (e.g. *.pptx) is dragged and dropped
         Then a message box should popup
+20160102
+    [✓] Show zoom level on title bar.
+    [✓] Add scrollbar when switching mode to FillWindow
+20151229
     [✓] Select zoom mode from menu context: None, Scale up to Window (Default), Fit to Window, Fill Window.
     [✓] Split current index data out of Image Manager
 20151228
