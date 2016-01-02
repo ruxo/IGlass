@@ -1,7 +1,7 @@
 ﻿20151229
     [✓] Show zoom level on title bar.
     [ ] Navigate with Left/Right arrow
-    [ ] Add scrollbar when switching mode to FillWindow
+    [*] Add scrollbar when switching mode to FillWindow
     [ ] Animate GIF
     [ ] Recent files and recent folders
     [ ] Prevent file lock during viewing

@@ -65,9 +65,6 @@ type MainWindowViewModel() as me =
   let mainWindowCommand = me.Factory.EventValueCommand()
   let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
 
-  let reloadImageSource (v: ImageIndex option) =
-    v.map(fst >> ImageLoader.extractImage >> Option.map box >> Option.getOrElse (constant EmptySource))
-
   let rec recalcScale scaleMode (viewSize: Size) (imageSize: Size) =
     match scaleMode with
     | Manual -> scale.Value
@@ -84,20 +81,25 @@ type MainWindowViewModel() as me =
     me.RaisePropertyChanged "ScaleApply"
     me.RaisePropertyChanged "Title"
 
-  member __.Image
-    with get() = image.Value 
-    and set v = image.Value <- v
-                imageSource <- v.bind(fst >> ImageLoader.extractImage)
-                imageSource.do' me.RecalcScale
-                me.RaisePropertyChanged "ImageSource"
-  member __.ImageCount
-    with get() = imageCount.Value 
-    and set v = imageCount.Value <- v
-                me.RaisePropertyChanged "Title"
-  member __.ImageSource = imageSource.map(box).getOrElse(constant EmptySource)
+  member __.Image with get() = image.Value 
+                  and set v = image.Value <- v
+                              imageSource <- v.bind(fst >> ImageLoader.extractImage)
+                              imageSource.do' me.RecalcScale
+                              me.RaisePropertyChanged "ImageSource"
+  member __.ImageCount with get() = imageCount.Value 
+                       and set v = imageCount.Value <- v
+                                   me.RaisePropertyChanged "Title"
   member __.Scale with get() = scale.Value
                   and set v = scale.Value <- v
                               scaleMode.Value <- Manual
+  member __.ScaleMode with get() = scaleMode.Value 
+                      and set v = scaleMode.Value <- v
+                                  imageSource.do' me.RecalcScale
+                                  me.RaisePropertyChanged "ScaleApply"
+  member __.ViewSize with get() = viewSize.Value and set v = viewSize.Value <- v; imageSource.do' me.RecalcScale
+
+  (********* Derived Properties *********)
+  member __.ImageSource = imageSource.map(box).getOrElse(constant EmptySource)
 
   /// <summary>
   /// Transformation scale that should be applied to image.
@@ -106,12 +108,6 @@ type MainWindowViewModel() as me =
     match scaleMode.Value with
     | Manual -> scale.Value
     | _ -> 1.
-  member __.ScaleMode with get() = scaleMode.Value 
-                      and set v = scaleMode.Value <- v
-                                  imageSource.do' me.RecalcScale
-                                  me.RaisePropertyChanged "ScaleApply"
-
-  member __.ViewSize with get() = viewSize.Value and set v = viewSize.Value <- v; imageSource.do' me.RecalcScale
 
   member __.Title =
     match image.Value with
@@ -120,6 +116,7 @@ type MainWindowViewModel() as me =
 
   member __.MainWindowCommand = mainWindowCommand
   member __.ZoomCommand = zoomCommand
+
 
 type ScaleModelConverter() =
   static let scaleModelToStretch _ =
@@ -138,9 +135,15 @@ type ScaleModelConverter() =
     | FillWindow -> StretchDirection.Both
     >> box
 
-  static let scaleModelToScrollBarVisibility _ =
+  static let scaleModelToScrollBarVisibility (param: string) =
     function
     | Manual _ -> ScrollBarVisibility.Auto
+    | FillWindow ->
+      let scaleWidth = (viewSize.Width / imageSize.Width) > (viewSize.Height / imageSize.Height)
+      if param.Equals("vert", StringComparison.OrdinalIgnoreCase) then
+        if scaleWidth then ScrollBarVisibility.Visible else ScrollBarVisibility.Hidden
+      else
+        if scaleWidth then ScrollBarVisibility.Hidden else ScrollBarVisibility.Visible
     | _ -> ScrollBarVisibility.Disabled
     >> box
 
