@@ -1,8 +1,9 @@
 ﻿namespace iGlass.ViewModels
 
-open System.Windows
-open iGlass.Core
 open System.Diagnostics
+open System.Windows
+open RZ.Foundation
+open iGlass.Core
 
 module private DragEventHandlers =
   let validateDrag (arg: DragEventArgs) =
@@ -26,7 +27,7 @@ type MainWindowController(model: MainWindowViewModel) =
 
   let galleryFrom showFile (fdList: FileDesc seq) =
     imageManager <- ImageManager(fdList)
-    model.Image <- showFile |> Option.bind imageManager.FindFileName
+    model.Image <- showFile |> Option.bind imageManager.FindFileName |> Option.orTry imageManager.FirstFileName
     model.ImageCount <- imageManager.ImageCount
 
   let galleryFromSingleFile(fd: FileDesc) = galleryFrom (fd.file()) [fd.getDirectory()]

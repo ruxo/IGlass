@@ -40,5 +40,9 @@ type ImageManager(source: FileDesc seq) =
     fileList
       .tryFindIndex(Path.GetFileName >> icmp filename)
       .map(fun i -> fileList.[i], i)
+  member __.FirstFileName() :ImageIndex option =
+    if fileList.Length > 0 
+      then Some (fileList.[0], 0)
+      else None
 
   member __.GetFileName idx :ImageIndex option = Array.tryItem idx fileList |> Option.map (Pair.with' idx)

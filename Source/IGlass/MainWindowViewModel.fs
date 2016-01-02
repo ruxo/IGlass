@@ -41,6 +41,7 @@ module ImageLoader =
       bi.BeginInit()
       bi.UriSource <- Uri(path)
       bi.EndInit()
+      bi.Freeze()
       Some (bi :> ImageSource)
     with
     | :? NotSupportedException -> None  // possibly invalid file
