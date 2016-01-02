@@ -48,6 +48,10 @@
       <Image Source="{Binding ImageSource, Mode=OneWay}"
              Stretch="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}"
              StretchDirection="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, Mode=OneWay}">
+        <Image.LayoutTransform>
+          <ScaleTransform ScaleX="{Binding ScaleApply, Mode=OneWay}"
+                          ScaleY="{Binding ScaleApply, Mode=OneWay}" />
+        </Image.LayoutTransform>
       </Image>
     </ScrollViewer>
   </DockPanel>

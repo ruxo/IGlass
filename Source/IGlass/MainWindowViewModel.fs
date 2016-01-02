@@ -81,6 +81,7 @@ type MainWindowViewModel() as me =
 
   member private __.RecalcScale(bmp: ImageSource) = 
     scale.Value <- recalcScale scaleMode.Value viewSize.Value (Size(bmp.Width, bmp.Height))
+    me.RaisePropertyChanged "ScaleApply"
     me.RaisePropertyChanged "Title"
 
   member __.Image
@@ -94,11 +95,21 @@ type MainWindowViewModel() as me =
     and set v = imageCount.Value <- v
                 me.RaisePropertyChanged "Title"
   member __.ImageSource = imageSource.map(box).getOrElse(constant EmptySource)
-  member __.Scale
-    with get() = scale.Value
-    and set v = scale.Value <- v
-                scaleMode.Value <- Manual
-  member __.ScaleMode with get() = scaleMode.Value and set v = scaleMode.Value <- v; imageSource.do' me.RecalcScale
+  member __.Scale with get() = scale.Value
+                  and set v = scale.Value <- v
+                              scaleMode.Value <- Manual
+
+  /// <summary>
+  /// Transformation scale that should be applied to image.
+  /// </summary>
+  member __.ScaleApply =
+    match scaleMode.Value with
+    | Manual -> scale.Value
+    | _ -> 1.
+  member __.ScaleMode with get() = scaleMode.Value 
+                      and set v = scaleMode.Value <- v
+                                  imageSource.do' me.RecalcScale
+                                  me.RaisePropertyChanged "ScaleApply"
 
   member __.ViewSize with get() = viewSize.Value and set v = viewSize.Value <- v; imageSource.do' me.RecalcScale
 
