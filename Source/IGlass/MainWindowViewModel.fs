@@ -6,13 +6,14 @@ open System.Windows.Data
 
 open FSharp.Core.Fluent
 open FSharp.ViewModule
-open RZ.Foundation
 open iGlass.Core
 open System.Windows.Media
 open System.Windows.Controls
 open System.Diagnostics
 open FSharp.Core.Printf
 open System.Windows.Media.Imaging
+open RZ.Foundation
+open RZ.Extensions
 
 type ScaleModel =
   | Manual
@@ -54,37 +55,52 @@ type MainWindowViewModel() as me =
 
   let EmptySource = DependencyProperty.UnsetValue
 
-  let mutable imageSource: obj = EmptySource
+  let mutable imageSource: ImageSource option = None
   let image: INotifyingValue<ImageIndex option> = me.Factory.Backing(<@ me.Image @>, None)
   let imageCount = me.Factory.Backing(<@ me.ImageCount @>, 0)
   let scaleMode = me.Factory.Backing(<@ me.ScaleMode @>, ScaleUpToWindow)
   let scale = me.Factory.Backing(<@ me.Scale @>, 1.0)
-  let viewSize = me.Factory.Backing(<@ me.ViewSize @>, Size(0.,0.))
+  let viewSize = me.Factory.Backing(<@ me.ViewSize @>, Size(1.,1.))
 
   let mainWindowCommand = me.Factory.EventValueCommand()
   let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
 
   let reloadImageSource (v: ImageIndex option) =
     v.map(fst >> ImageLoader.extractImage >> Option.map box >> Option.getOrElse (constant EmptySource))
-     .do'(fun bmp -> imageSource <- bmp; me.RaisePropertyChanged "ImageSource")
+
+  let rec recalcScale scaleMode (viewSize: Size) (imageSize: Size) =
+    match scaleMode with
+    | Manual -> scale.Value
+    | ScaleUpToWindow ->
+      if viewSize |> Size.canContain imageSize
+        then 1.
+        else recalcScale FitToWindow viewSize imageSize
+
+    | FitToWindow -> min (viewSize.Width / imageSize.Width) (viewSize.Height / imageSize.Height)
+    | FillWindow -> max (viewSize.Width / imageSize.Width) (viewSize.Height / imageSize.Height)
+
+  member private __.RecalcScale(bmp: ImageSource) = 
+    scale.Value <- recalcScale scaleMode.Value viewSize.Value (Size(bmp.Width, bmp.Height))
+    me.RaisePropertyChanged "Title"
 
   member __.Image
     with get() = image.Value 
     and set v = image.Value <- v
-                reloadImageSource v
-                me.RaisePropertyChanged "Title"
+                imageSource <- v.bind(fst >> ImageLoader.extractImage)
+                imageSource.do' me.RecalcScale
+                me.RaisePropertyChanged "ImageSource"
   member __.ImageCount
     with get() = imageCount.Value 
     and set v = imageCount.Value <- v
                 me.RaisePropertyChanged "Title"
-  member __.ImageSource = imageSource
+  member __.ImageSource = imageSource.map(box).getOrElse(constant EmptySource)
   member __.Scale
     with get() = scale.Value
     and set v = scale.Value <- v
                 scaleMode.Value <- Manual
-  member __.ScaleMode with get() = scaleMode.Value and set v = scaleMode.Value <- v
+  member __.ScaleMode with get() = scaleMode.Value and set v = scaleMode.Value <- v; imageSource.do' me.RecalcScale
 
-  member __.ViewSize with get() = viewSize.Value and set v = viewSize.Value <- v
+  member __.ViewSize with get() = viewSize.Value and set v = viewSize.Value <- v; imageSource.do' me.RecalcScale
 
   member __.Title =
     match image.Value with
