@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="WpfExtensions.fs" />
     <Compile Include="GlobalSetting.fs" />
     <Compile Include="InstanceManagement.fs" />
     <Compile Include="MainWindowViewModel.fs" />
