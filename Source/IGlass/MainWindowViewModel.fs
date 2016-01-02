@@ -120,6 +120,7 @@ type MainWindowViewModel() as me =
   /// </summary>
   member __.ScaleApply =
     match scaleMode.Value with
+    | FillWindow
     | Manual -> scale.Value
     | _ -> 1.
 
@@ -146,18 +147,18 @@ type MainWindowViewModel() as me =
 type ScaleModelConverter() =
   static let scaleModelToStretch _ =
     function
+    | FillWindow
     | Manual _ -> Stretch.None
     | ScaleUpToWindow
     | FitToWindow -> Stretch.Uniform
-    | FillWindow -> Stretch.UniformToFill
     >> box
 
   static let scaleModelToDirection _ =
     function
     | ScaleUpToWindow -> StretchDirection.DownOnly
+    | FillWindow
     | Manual _ -> StretchDirection.Both  // ignored anyway
-    | FitToWindow
-    | FillWindow -> StretchDirection.Both
+    | FitToWindow -> StretchDirection.Both
     >> box
 
   static let scaleModelToMenuItemCheckBox = ScaleModel.toMode >> (=) >> ((<<) box)
