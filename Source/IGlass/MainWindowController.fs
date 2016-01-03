@@ -47,7 +47,6 @@ type MainWindowController(model: MainWindowViewModel) =
   | Invalid case -> Printf.kprintf Debug.WriteLine "Invalid: %s" case
 
   member __.Initialize() =
-    model.EventStream |> Observable.subscribe handleEvents |> ignore
     model.ViewEvents |> Observable.subscribe handleEvents |> ignore
     
   member __.SelectFileName filename = model.Image <- imageManager.FindFileName(filename)

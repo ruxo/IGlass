@@ -22,10 +22,15 @@
     <KeyBinding Command="LastPage" Key="Left" />
   </Window.InputBindings>
   <i:Interaction.Triggers>
-    <i:EventTrigger EventName="DragEnter"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dragEnterConverter}" /></i:EventTrigger>
-    <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
+    <i:EventTrigger EventName="DragEnter">
+      <fsx:EventToCommand Command="model:AppCommands.CheckDrop" EventArgsConverter="{StaticResource dragEnterConverter}" /></i:EventTrigger>
+    <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="model:AppCommands.DropItem" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
   </i:Interaction.Triggers>      
   <DockPanel>
+    <UniformGrid DockPanel.Dock="Top">
+      <Button Command="LastPage">Left</Button>
+      <Button Command="NextPage">Right</Button>
+    </UniformGrid>
     <ScrollViewer x:Name="imageView"
                   VerticalScrollBarVisibility="{Binding VScrollbarVisibility, Mode=OneWay}"
                   HorizontalScrollBarVisibility="{Binding HScrollbarVisibility, Mode=OneWay}"
@@ -36,16 +41,16 @@
           <MenuItem Header="_Zoom">
             <MenuItem Header="_Scale Up to Window" IsCheckable="True" 
                       IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=ScaleUpToWindow, Mode=OneWay}"
-                      Command="{Binding ZoomCommand}" CommandParameter="ScaleUpToWindow" />
+                      Command="model:AppCommands.ZoomChanged" CommandParameter="ScaleUpToWindow" />
             <MenuItem Header="_Fit to Window" IsCheckable="True" 
                       IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=FitToWindow, Mode=OneWay}"
-                      Command="{Binding ZoomCommand}" CommandParameter="FitToWindow" />
+                      Command="model:AppCommands.ZoomChanged" CommandParameter="FitToWindow" />
             <MenuItem Header="Fil_l to Window" IsCheckable="True" 
                       IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=FillWindow, Mode=OneWay}"
-                      Command="{Binding ZoomCommand}" CommandParameter="FillWindow" />
+                      Command="model:AppCommands.ZoomChanged" CommandParameter="FillWindow" />
             <MenuItem Header="_Manual" IsCheckable="True" 
                       IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=Manual, Mode=OneWay}"
-                      Command="{Binding ZoomCommand}" CommandParameter="Manual" />
+                      Command="model:AppCommands.ZoomChanged" CommandParameter="Manual" />
           </MenuItem>
         </ContextMenu>
       </ScrollViewer.ContextMenu>

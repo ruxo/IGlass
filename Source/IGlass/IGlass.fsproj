@@ -60,6 +60,7 @@
     <Compile Include="WpfExtensions.fs" />
     <Compile Include="GlobalSetting.fs" />
     <Compile Include="InstanceManagement.fs" />
+    <Compile Include="AppCommands.fs" />
     <Compile Include="MainWindowViewModel.fs" />
     <Compile Include="MainWindowController.fs" />
     <Compile Include="Views.fs" />

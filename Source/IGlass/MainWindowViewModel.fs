@@ -52,10 +52,10 @@ module ImageLoader =
     | :? NotSupportedException -> None  // possibly invalid file
 
 type MainWindowViewModel() as me =
-  inherit EventViewModelBase<MainWindowEvent>()
+  inherit ViewModelBase()
 
   [<Literal>]
-  let AppTitle = "iGlassy"
+  static let AppTitle = "iGlassy"
 
   let modelEvent = Event<MainWindowEvent>()
 
@@ -79,8 +79,6 @@ type MainWindowViewModel() as me =
     | FillWindow -> None
     | _ -> Some ScrollBarVisibility.Disabled
 
-  let mainWindowCommand = me.Factory.EventValueCommand()
-  let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
   let getImageSize() = imageSource.map(fun bmp -> Size(bmp.Width, bmp.Height))
 
   let rec recalcScale scaleMode (viewSize: Size) (imageSize: Size) =
@@ -96,11 +94,26 @@ type MainWindowViewModel() as me =
 
   let commandCenter =
     [ NavigationCommands.NextPage |> CommandMap.to' (constant NextPage)
-      NavigationCommands.LastPage |> CommandMap.to' (constant LastPage) ]
+      NavigationCommands.LastPage |> CommandMap.to' (constant LastPage) 
+      AppCommands.ZoomChanged |> CommandMap.to' (Zoom << (cast<string> >> ScaleModel.toMode))
+      AppCommands.CheckDrop |> CommandMap.to' cast<MainWindowEvent>
+      AppCommands.DropItem |> CommandMap.to' cast<MainWindowEvent> ]
     |> CommandControlCenter (sideEffect (fun _ -> Debug.WriteLine("xxx")) >> modelEvent.Trigger)
 
+  static let getCommandName: obj -> string = function
+  | :? RoutedUICommand as cmd -> cmd.Name
+  | any -> any.GetType().FullName
+
   interface ICommandHandler with
-    member __.ControlCenter = commandCenter 
+    member __.ControlCenter = 
+      { new ICommandControlCenter with
+          member __.CanExecute(cmd, param) =
+            Debug.WriteLine("check {0} with [{1}]", getCommandName cmd, param)
+            commandCenter.CanExecute(cmd, param) 
+          member __.Execute(cmd, param) =
+            Debug.WriteLine("execute {0} with [{1}]", getCommandName cmd, param)
+            commandCenter.Execute(cmd, param)
+      }
 
   member private __.RecalcScale(bmp: ImageSource) = 
     scale.Value <- recalcScale scaleMode.Value viewSize.Value (Size(bmp.Width, bmp.Height))
@@ -153,9 +166,6 @@ type MainWindowViewModel() as me =
     match image.Value with
     | None -> AppTitle
     | Some (img, pos) -> sprintf "%s - [%d/%d] (%.3f) %s" AppTitle (pos+1) me.ImageCount scale.Value img
-
-  member __.MainWindowCommand = mainWindowCommand
-  member __.ZoomCommand = zoomCommand
 
   member __.ViewEvents = modelEvent.Publish :> IObservable<MainWindowEvent>
 
