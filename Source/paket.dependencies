@@ -7,7 +7,7 @@ nuget FSharp.Core.Fluent-4.0
 nuget FSharp.ViewModule.Core
 nuget IconLib.Unofficial
 nuget RZ.F4.FsXaml.Wpf
-nuget RZ.Wpf
+nuget RZ.Wpf >= 1.1.1
 nuget RZ-FreeImageNET.dll
 nuget System.Drawing.PSD 0.1.0 framework: >= net40
 nuget Unofficial.Ionic.Zip

@@ -2,25 +2,9 @@
 
 open System.Diagnostics
 open System.Windows
+open FSharp.Core.Fluent
 open RZ.Foundation
 open iGlass.Core
-
-module private DragEventHandlers =
-  let validateDrag (arg: DragEventArgs) =
-    arg.Effects <- if arg.Data.GetDataPresent(DataFormats.FileDrop)
-                      then DragDropEffects.Copy
-                      else DragDropEffects.None
-
-  let getDropTarget (arg: DragEventArgs) =
-    arg.Handled <- true
-    let data = arg.Data.GetData(DataFormats.FileDrop) :?> string[]
-    data |> Seq.choose FileDesc.Verify
-         |> Seq.toList
-
-type private DragEventConverter = FsXaml.EventArgsConverter<DragEventArgs, MainWindowEvent>
-type DropConverter() = inherit DragEventConverter(DragEventHandlers.getDropTarget >> Drop, Invalid "DropConverter")
-type DragEnterConverter() = inherit DragEventConverter(DragEnter, Invalid "DragEnterConverter")
-
 
 type MainWindowController(model: MainWindowViewModel) =
   let mutable imageManager = ImageManager(Seq.empty)
@@ -42,9 +26,14 @@ type MainWindowController(model: MainWindowViewModel) =
     | [single] -> galleryFromSingleFile single
     | xs -> galleryFrom None xs
   | Zoom zoom -> changeZoom zoom
+  | FirstPage -> model.Image <- imageManager.FirstFileName()
+  | LastPage -> model.Image <- imageManager.LastFileName()
+  | NextPage -> model.Image <- model.Image.bind(snd >> imageManager.NextIndex)
+  | PreviousPage -> model.Image <- model.Image.bind(snd >> imageManager.PreviousIndex)
   | Invalid case -> Printf.kprintf Debug.WriteLine "Invalid: %s" case
 
-  member __.Initialize() = model.EventStream |> Observable.subscribe handleEvents |> ignore
+  member __.Initialize() =
+    model.ViewEvents |> Observable.subscribe handleEvents |> ignore
     
   member __.SelectFileName filename = model.Image <- imageManager.FindFileName(filename)
   member __.InitGallery = galleryFromSingleFile

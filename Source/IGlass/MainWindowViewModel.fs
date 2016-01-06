@@ -2,6 +2,7 @@
 
 open System
 open System.Windows
+open System.Windows.Input
 open System.Windows.Data
 
 open FSharp.Core.Fluent
@@ -14,6 +15,7 @@ open FSharp.Core.Printf
 open System.Windows.Media.Imaging
 open RZ.Foundation
 open RZ.Extensions
+open RZ.Wpf.CodeBehind
 
 type ScaleModel =
   | Manual
@@ -34,6 +36,10 @@ type MainWindowEvent =
   | DragEnter           of DragEventArgs
   | Drop                of FileDesc list
   | Zoom                of ScaleModel
+  | FirstPage
+  | NextPage
+  | PreviousPage
+  | LastPage
 
 module ImageLoader =
   let extractImage path =
@@ -47,11 +53,27 @@ module ImageLoader =
     with
     | :? NotSupportedException -> None  // possibly invalid file
 
+
+module private DragEventHandlers =
+  let validateDrag (arg: DragEventArgs) =
+    arg.Effects <- if arg.Data.GetDataPresent(DataFormats.FileDrop)
+                      then DragDropEffects.Copy
+                      else DragDropEffects.None
+
+  let getDropTarget (arg: DragEventArgs) =
+    arg.Handled <- true
+    let data = arg.Data.GetData(DataFormats.FileDrop) :?> string[]
+    data |> Seq.choose FileDesc.Verify
+         |> Seq.toList
+
+
 type MainWindowViewModel() as me =
-  inherit EventViewModelBase<MainWindowEvent>()
+  inherit ViewModelBase()
 
   [<Literal>]
-  let AppTitle = "iGlassy"
+  static let AppTitle = "iGlassy"
+
+  let modelEvent = Event<MainWindowEvent>()
 
   let EmptySource = DependencyProperty.UnsetValue
 
@@ -73,8 +95,6 @@ type MainWindowViewModel() as me =
     | FillWindow -> None
     | _ -> Some ScrollBarVisibility.Disabled
 
-  let mainWindowCommand = me.Factory.EventValueCommand()
-  let zoomCommand = me.Factory.EventValueCommand(ScaleModel.toMode >> Zoom)
   let getImageSize() = imageSource.map(fun bmp -> Size(bmp.Width, bmp.Height))
 
   let rec recalcScale scaleMode (viewSize: Size) (imageSize: Size) =
@@ -87,6 +107,19 @@ type MainWindowViewModel() as me =
 
     | FitToWindow -> min (viewSize.Width / imageSize.Width) (viewSize.Height / imageSize.Height)
     | FillWindow -> max (viewSize.Width / imageSize.Width) (viewSize.Height / imageSize.Height)
+
+  let commandCenter =
+    [ NavigationCommands.FirstPage |> CommandMap.to' (constant FirstPage)
+      NavigationCommands.NextPage |> CommandMap.to' (constant NextPage)
+      NavigationCommands.PreviousPage |> CommandMap.to' (constant PreviousPage)
+      NavigationCommands.LastPage |> CommandMap.to' (constant LastPage) 
+      AppCommands.ZoomChanged |> CommandMap.to' (Zoom << (cast<string> >> ScaleModel.toMode))
+      AppCommands.CheckDrop |> CommandMap.to' cast<MainWindowEvent>
+      AppCommands.DropItem |> CommandMap.to' cast<MainWindowEvent> ]
+    |> CommandControlCenter modelEvent.Trigger
+
+  interface ICommandHandler with
+    member __.ControlCenter = commandCenter
 
   member private __.RecalcScale(bmp: ImageSource) = 
     scale.Value <- recalcScale scaleMode.Value viewSize.Value (Size(bmp.Width, bmp.Height))
@@ -115,6 +148,12 @@ type MainWindowViewModel() as me =
   (********* Derived Properties *********)
   member __.ImageSource = imageSource.map(box).getOrElse(constant EmptySource)
 
+  member __.CheckDrop = AppCommands.CheckDrop
+  member __.DropItem = AppCommands.DropItem
+  member __.DragEnterConverter(_:string, e: DragEventArgs) = DragEnter e
+  member __.DropConverter(_:string, e: DragEventArgs) = e |> DragEventHandlers.getDropTarget |> Drop
+
+
   /// <summary>
   /// Transformation scale that should be applied to image.
   /// </summary>
@@ -140,9 +179,7 @@ type MainWindowViewModel() as me =
     | None -> AppTitle
     | Some (img, pos) -> sprintf "%s - [%d/%d] (%.3f) %s" AppTitle (pos+1) me.ImageCount scale.Value img
 
-  member __.MainWindowCommand = mainWindowCommand
-  member __.ZoomCommand = zoomCommand
-
+  member __.ViewEvents = modelEvent.Publish :> IObservable<MainWindowEvent>
 
 type ScaleModelConverter() =
   static let scaleModelToStretch _ =

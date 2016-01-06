@@ -3,45 +3,46 @@
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity" 
         xmlns:fsx="clr-namespace:FsXaml;assembly=FsXaml.Wpf"
         xmlns:model="clr-namespace:iGlass.ViewModels;assembly=IGlass"
+        xmlns:rz="clr-namespace:RZ.Wpf.Markups;assembly=RZ.Wpf"
         Title="{Binding Title, Mode=OneWay}"
+        DragEnter="{rz:BindCommand CheckDrop, CommandType=ContextCommand, EventArgumentConverter=DragEnterConverter}"
+        Drop="{rz:BindCommand DropItem, CommandType=ContextCommand, EventArgumentConverter=DropConverter}"
+        PreviewGotKeyboardFocus="ForwardToImageView"
         AllowDrop="true" Background="DimGray"
         MinWidth="1 in" MinHeight="1 in">
   <Window.Resources>
-    <ResourceDictionary>
-      <model:MainWindowViewModel x:Key="model" />
-      <model:ScaleModelConverter x:Key="scaleModelConverter"/>
-      <model:DragEnterConverter x:Key="dragEnterConverter" />
-      <model:DropConverter x:Key="dropConverter" />
-    </ResourceDictionary>
+    <model:ScaleModelConverter x:Key="scaleModelConverter"/>
   </Window.Resources>
   <Window.DataContext>
-    <Binding Source="{StaticResource model}" />
+    <model:MainWindowViewModel />
   </Window.DataContext>
-  <i:Interaction.Triggers>
-    <i:EventTrigger EventName="DragEnter"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dragEnterConverter}" /></i:EventTrigger>
-    <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="{Binding MainWindowCommand}" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
-  </i:Interaction.Triggers>      
   <DockPanel>
     <ScrollViewer x:Name="imageView"
                   VerticalScrollBarVisibility="{Binding VScrollbarVisibility, Mode=OneWay}"
                   HorizontalScrollBarVisibility="{Binding HScrollbarVisibility, Mode=OneWay}"
                   SizeChanged="NotifyViewportChanged"
                   PanningMode="Both">
+      <ScrollViewer.InputBindings>
+        <KeyBinding Command="FirstPage" Key="Home" />
+        <KeyBinding Command="NextPage" Key="Right" />
+        <KeyBinding Command="PreviousPage" Key="Left" />
+        <KeyBinding Command="LastPage" Key="End" />
+      </ScrollViewer.InputBindings>
       <ScrollViewer.ContextMenu>
         <ContextMenu>
           <MenuItem Header="_Zoom">
             <MenuItem Header="_Scale Up to Window" IsCheckable="True" 
                       IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=ScaleUpToWindow, Mode=OneWay}"
-                      Command="{Binding ZoomCommand}" CommandParameter="ScaleUpToWindow" />
+                      Command="model:AppCommands.ZoomChanged" CommandParameter="ScaleUpToWindow" />
             <MenuItem Header="_Fit to Window" IsCheckable="True" 
                       IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=FitToWindow, Mode=OneWay}"
-                      Command="{Binding ZoomCommand}" CommandParameter="FitToWindow" />
+                      Command="model:AppCommands.ZoomChanged" CommandParameter="FitToWindow" />
             <MenuItem Header="Fil_l to Window" IsCheckable="True" 
                       IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=FillWindow, Mode=OneWay}"
-                      Command="{Binding ZoomCommand}" CommandParameter="FillWindow" />
+                      Command="model:AppCommands.ZoomChanged" CommandParameter="FillWindow" />
             <MenuItem Header="_Manual" IsCheckable="True" 
                       IsChecked="{Binding ScaleMode, Converter={StaticResource scaleModelConverter}, ConverterParameter=Manual, Mode=OneWay}"
-                      Command="{Binding ZoomCommand}" CommandParameter="Manual" />
+                      Command="model:AppCommands.ZoomChanged" CommandParameter="Manual" />
           </MenuItem>
         </ContextMenu>
       </ScrollViewer.ContextMenu>

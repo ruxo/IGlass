@@ -42,7 +42,21 @@ type ImageManager(source: FileDesc seq) =
       .map(fun i -> fileList.[i], i)
   member __.FirstFileName() :ImageIndex option =
     if fileList.Length > 0 
-      then Some (fileList.[0], 0)
+      then Some (fileList.head(), 0)
       else None
 
   member __.GetFileName idx :ImageIndex option = Array.tryItem idx fileList |> Option.map (Pair.with' idx)
+
+  member __.LastFileName() =
+    if fileList.Length > 0
+      then Some (fileList.last(), fileList.Length-1)
+      else None
+
+  member me.NextIndex index =
+    let next = (index + 1) % fileList.Length
+    me.GetFileName next
+
+  member me.PreviousIndex index =
+    let prev = (index + fileList.Length - 1) % fileList.Length
+    me.GetFileName prev
+    

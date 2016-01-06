@@ -5,11 +5,14 @@ open System.Windows
 open System.Windows.Controls
 open RZ.Foundation
 open RZ.Wpf.CodeBehind
+open System.Windows.Input
 
 type MainWindow() as me =
   inherit Window()
     
   do me.InitializeCodeBehind("MainWindow.xaml")
+     me.InstallCommandForwarder()
+
   let imageView = me.FindName("imageView") :?> ScrollViewer
 
   let getDataContext() = Option.ofObj me.DataContext
@@ -27,6 +30,11 @@ type MainWindow() as me =
   let setViewSizeToModel sender = 
     getDataContext().bind(getSizePropertySetter).ap(getViewportSize sender)
     |> ignore
+
+  member __.ForwardToImageView(_:obj, e:KeyboardFocusChangedEventArgs) =
+    if e.Source.Equals(me) then
+      e.Handled <- true
+      imageView.Focus() |> ignore
 
   member __.NotifyViewportChanged(sender: obj, _: SizeChangedEventArgs) = setViewSizeToModel sender
     
