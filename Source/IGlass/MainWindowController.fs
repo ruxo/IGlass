@@ -2,6 +2,7 @@
 
 open System.Diagnostics
 open System.Windows
+open FSharp.Core.Fluent
 open RZ.Foundation
 open iGlass.Core
 
@@ -25,8 +26,8 @@ type MainWindowController(model: MainWindowViewModel) =
     | [single] -> galleryFromSingleFile single
     | xs -> galleryFrom None xs
   | Zoom zoom -> changeZoom zoom
-  | LastPage
-  | NextPage -> Debug.WriteLine("Next/Last page")
+  | LastPage -> model.Image <- model.Image.bind(snd >> imageManager.PreviousIndex)
+  | NextPage -> model.Image <- model.Image.bind(snd >> imageManager.NextIndex)
   | Invalid case -> Printf.kprintf Debug.WriteLine "Invalid: %s" case
 
   member __.Initialize() =

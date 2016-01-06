@@ -23,10 +23,6 @@
     <KeyBinding Command="LastPage" Key="Left" />
   </Window.InputBindings>
   <DockPanel>
-    <UniformGrid DockPanel.Dock="Top">
-      <Button Command="LastPage">Left</Button>
-      <Button Command="NextPage">Right</Button>
-    </UniformGrid>
     <ScrollViewer x:Name="imageView"
                   VerticalScrollBarVisibility="{Binding VScrollbarVisibility, Mode=OneWay}"
                   HorizontalScrollBarVisibility="{Binding HScrollbarVisibility, Mode=OneWay}"
