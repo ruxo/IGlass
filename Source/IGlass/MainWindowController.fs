@@ -26,8 +26,10 @@ type MainWindowController(model: MainWindowViewModel) =
     | [single] -> galleryFromSingleFile single
     | xs -> galleryFrom None xs
   | Zoom zoom -> changeZoom zoom
-  | LastPage -> model.Image <- model.Image.bind(snd >> imageManager.PreviousIndex)
+  | FirstPage -> model.Image <- imageManager.FirstFileName()
+  | LastPage -> model.Image <- imageManager.LastFileName()
   | NextPage -> model.Image <- model.Image.bind(snd >> imageManager.NextIndex)
+  | PreviousPage -> model.Image <- model.Image.bind(snd >> imageManager.PreviousIndex)
   | Invalid case -> Printf.kprintf Debug.WriteLine "Invalid: %s" case
 
   member __.Initialize() =

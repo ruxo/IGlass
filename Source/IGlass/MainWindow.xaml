@@ -7,27 +7,27 @@
         Title="{Binding Title, Mode=OneWay}"
         DragEnter="{rz:BindCommand CheckDrop, CommandType=ContextCommand, EventArgumentConverter=DragEnterConverter}"
         Drop="{rz:BindCommand DropItem, CommandType=ContextCommand, EventArgumentConverter=DropConverter}"
+        PreviewGotKeyboardFocus="ForwardToImageView"
         AllowDrop="true" Background="DimGray"
         MinWidth="1 in" MinHeight="1 in">
   <Window.Resources>
-    <ResourceDictionary>
-      <model:MainWindowViewModel x:Key="model" />
-      <model:ScaleModelConverter x:Key="scaleModelConverter"/>
-    </ResourceDictionary>
+    <model:ScaleModelConverter x:Key="scaleModelConverter"/>
   </Window.Resources>
   <Window.DataContext>
-    <Binding Source="{StaticResource model}" />
+    <model:MainWindowViewModel />
   </Window.DataContext>
-  <Window.InputBindings>
-    <KeyBinding Command="NextPage" Key="Right" />
-    <KeyBinding Command="LastPage" Key="Left" />
-  </Window.InputBindings>
   <DockPanel>
     <ScrollViewer x:Name="imageView"
                   VerticalScrollBarVisibility="{Binding VScrollbarVisibility, Mode=OneWay}"
                   HorizontalScrollBarVisibility="{Binding HScrollbarVisibility, Mode=OneWay}"
                   SizeChanged="NotifyViewportChanged"
                   PanningMode="Both">
+      <ScrollViewer.InputBindings>
+        <KeyBinding Command="FirstPage" Key="Home" />
+        <KeyBinding Command="NextPage" Key="Right" />
+        <KeyBinding Command="PreviousPage" Key="Left" />
+        <KeyBinding Command="LastPage" Key="End" />
+      </ScrollViewer.InputBindings>
       <ScrollViewer.ContextMenu>
         <ContextMenu>
           <MenuItem Header="_Zoom">

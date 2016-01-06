@@ -1,5 +1,6 @@
-﻿    [*] Navigate with Left/Right arrow
+﻿    [✓] Navigate with Left/Right/Home/End arrow
     [ ] Manual zoom with slider.
+    [ ] Click on the left/right edge of image, navigate it to that direction.
     [ ] Animate GIF
     [ ] Recent files and recent folders
     [ ] Prevent file lock during viewing

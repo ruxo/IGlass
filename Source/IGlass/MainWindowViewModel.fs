@@ -36,7 +36,9 @@ type MainWindowEvent =
   | DragEnter           of DragEventArgs
   | Drop                of FileDesc list
   | Zoom                of ScaleModel
+  | FirstPage
   | NextPage
+  | PreviousPage
   | LastPage
 
 module ImageLoader =
@@ -107,7 +109,9 @@ type MainWindowViewModel() as me =
     | FillWindow -> max (viewSize.Width / imageSize.Width) (viewSize.Height / imageSize.Height)
 
   let commandCenter =
-    [ NavigationCommands.NextPage |> CommandMap.to' (constant NextPage)
+    [ NavigationCommands.FirstPage |> CommandMap.to' (constant FirstPage)
+      NavigationCommands.NextPage |> CommandMap.to' (constant NextPage)
+      NavigationCommands.PreviousPage |> CommandMap.to' (constant PreviousPage)
       NavigationCommands.LastPage |> CommandMap.to' (constant LastPage) 
       AppCommands.ZoomChanged |> CommandMap.to' (Zoom << (cast<string> >> ScaleModel.toMode))
       AppCommands.CheckDrop |> CommandMap.to' cast<MainWindowEvent>
