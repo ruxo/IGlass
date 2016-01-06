@@ -51,6 +51,20 @@ module ImageLoader =
     with
     | :? NotSupportedException -> None  // possibly invalid file
 
+
+module private DragEventHandlers =
+  let validateDrag (arg: DragEventArgs) =
+    arg.Effects <- if arg.Data.GetDataPresent(DataFormats.FileDrop)
+                      then DragDropEffects.Copy
+                      else DragDropEffects.None
+
+  let getDropTarget (arg: DragEventArgs) =
+    arg.Handled <- true
+    let data = arg.Data.GetData(DataFormats.FileDrop) :?> string[]
+    data |> Seq.choose FileDesc.Verify
+         |> Seq.toList
+
+
 type MainWindowViewModel() as me =
   inherit ViewModelBase()
 
@@ -98,22 +112,10 @@ type MainWindowViewModel() as me =
       AppCommands.ZoomChanged |> CommandMap.to' (Zoom << (cast<string> >> ScaleModel.toMode))
       AppCommands.CheckDrop |> CommandMap.to' cast<MainWindowEvent>
       AppCommands.DropItem |> CommandMap.to' cast<MainWindowEvent> ]
-    |> CommandControlCenter (sideEffect (fun _ -> Debug.WriteLine("xxx")) >> modelEvent.Trigger)
-
-  static let getCommandName: obj -> string = function
-  | :? RoutedUICommand as cmd -> cmd.Name
-  | any -> any.GetType().FullName
+    |> CommandControlCenter modelEvent.Trigger
 
   interface ICommandHandler with
-    member __.ControlCenter = 
-      { new ICommandControlCenter with
-          member __.CanExecute(cmd, param) =
-            Debug.WriteLine("check {0} with [{1}]", getCommandName cmd, param)
-            commandCenter.CanExecute(cmd, param) 
-          member __.Execute(cmd, param) =
-            Debug.WriteLine("execute {0} with [{1}]", getCommandName cmd, param)
-            commandCenter.Execute(cmd, param)
-      }
+    member __.ControlCenter = commandCenter
 
   member private __.RecalcScale(bmp: ImageSource) = 
     scale.Value <- recalcScale scaleMode.Value viewSize.Value (Size(bmp.Width, bmp.Height))
@@ -141,6 +143,12 @@ type MainWindowViewModel() as me =
 
   (********* Derived Properties *********)
   member __.ImageSource = imageSource.map(box).getOrElse(constant EmptySource)
+
+  member __.CheckDrop = AppCommands.CheckDrop
+  member __.DropItem = AppCommands.DropItem
+  member __.DragEnterConverter(_:string, e: DragEventArgs) = DragEnter e
+  member __.DropConverter(_:string, e: DragEventArgs) = e |> DragEventHandlers.getDropTarget |> Drop
+
 
   /// <summary>
   /// Transformation scale that should be applied to image.

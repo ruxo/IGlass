@@ -3,15 +3,16 @@
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity" 
         xmlns:fsx="clr-namespace:FsXaml;assembly=FsXaml.Wpf"
         xmlns:model="clr-namespace:iGlass.ViewModels;assembly=IGlass"
+        xmlns:rz="clr-namespace:RZ.Wpf.Markups;assembly=RZ.Wpf"
         Title="{Binding Title, Mode=OneWay}"
+        DragEnter="{rz:BindCommand CheckDrop, CommandType=ContextCommand, EventArgumentConverter=DragEnterConverter}"
+        Drop="{rz:BindCommand DropItem, CommandType=ContextCommand, EventArgumentConverter=DropConverter}"
         AllowDrop="true" Background="DimGray"
         MinWidth="1 in" MinHeight="1 in">
   <Window.Resources>
     <ResourceDictionary>
       <model:MainWindowViewModel x:Key="model" />
       <model:ScaleModelConverter x:Key="scaleModelConverter"/>
-      <model:DragEnterConverter x:Key="dragEnterConverter" />
-      <model:DropConverter x:Key="dropConverter" />
     </ResourceDictionary>
   </Window.Resources>
   <Window.DataContext>
@@ -21,11 +22,6 @@
     <KeyBinding Command="NextPage" Key="Right" />
     <KeyBinding Command="LastPage" Key="Left" />
   </Window.InputBindings>
-  <i:Interaction.Triggers>
-    <i:EventTrigger EventName="DragEnter">
-      <fsx:EventToCommand Command="model:AppCommands.CheckDrop" EventArgsConverter="{StaticResource dragEnterConverter}" /></i:EventTrigger>
-    <i:EventTrigger EventName="Drop"><fsx:EventToCommand Command="model:AppCommands.DropItem" EventArgsConverter="{StaticResource dropConverter}" /></i:EventTrigger>
-  </i:Interaction.Triggers>      
   <DockPanel>
     <UniformGrid DockPanel.Dock="Top">
       <Button Command="LastPage">Left</Button>

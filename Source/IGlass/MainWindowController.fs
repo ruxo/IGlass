@@ -5,23 +5,6 @@ open System.Windows
 open RZ.Foundation
 open iGlass.Core
 
-module private DragEventHandlers =
-  let validateDrag (arg: DragEventArgs) =
-    arg.Effects <- if arg.Data.GetDataPresent(DataFormats.FileDrop)
-                      then DragDropEffects.Copy
-                      else DragDropEffects.None
-
-  let getDropTarget (arg: DragEventArgs) =
-    arg.Handled <- true
-    let data = arg.Data.GetData(DataFormats.FileDrop) :?> string[]
-    data |> Seq.choose FileDesc.Verify
-         |> Seq.toList
-
-type private DragEventConverter = FsXaml.EventArgsConverter<DragEventArgs, MainWindowEvent>
-type DropConverter() = inherit DragEventConverter(DragEventHandlers.getDropTarget >> Drop, Invalid "DropConverter")
-type DragEnterConverter() = inherit DragEventConverter(DragEnter, Invalid "DragEnterConverter")
-
-
 type MainWindowController(model: MainWindowViewModel) =
   let mutable imageManager = ImageManager(Seq.empty)
 
