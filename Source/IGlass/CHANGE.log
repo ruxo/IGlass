@@ -1,4 +1,7 @@
 ﻿    [✓] Navigate with Left/Right/Home/End arrow
+    [ ] Show control panel when right-click on image canvas.
+    [ ] Crop image.
+    [ ] Rotate image.
     [ ] Manual zoom with slider.
     [ ] Click on the left/right edge of image, navigate it to that direction.
     [ ] Animate GIF
